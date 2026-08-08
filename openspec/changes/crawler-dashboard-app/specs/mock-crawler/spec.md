@@ -4,12 +4,15 @@
 
 The system SHALL provide a `mock` crawler that behaves like a real account
 crawler from the user's perspective, serving as the default example crawler
-users see and run before any real bank crawler exists.
+users see and run before any real bank crawler exists. The crawler SHALL be
+displayed to the user with the name "Desjardins (Mock)", making clear which
+institution it simulates and that it does not perform a real crawl.
 
 #### Scenario: Mock crawler is discoverable
 
 - **WHEN** the dashboard requests the list of available crawlers
-- **THEN** the `mock` crawler appears in the list with a name and description
+- **THEN** the `mock` crawler appears in the list with the name "Desjardins
+  (Mock)" and a description
 
 ### Requirement: Mock Crawler Simulates a Bank Login Session
 

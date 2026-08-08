@@ -4,7 +4,8 @@
 
 The `mock` crawler SHALL be implemented as a conformant implementation of the
 common `Crawler` interface (see `crawler-interface-technical`), serving as the
-project's reference implementation for future crawlers.
+project's reference implementation for future crawlers. Its `name` field SHALL
+be set to "Desjardins (Mock)".
 
 #### Scenario: Mock crawler conforms to the Crawler interface
 
