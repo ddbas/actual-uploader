@@ -99,4 +99,4 @@
       progress indicators and Results tab behave as specified.
 - [x] 6.3 Update `README.md`/`CONTRIBUTING.md` (if needed) with instructions for
       running the binary locally and adding new crawlers.
-- [ ] 6.4 Ensure all git hooks (lefthook) pass without being skipped.
+- [x] 6.4 Ensure all git hooks (lefthook) pass without being skipped.
