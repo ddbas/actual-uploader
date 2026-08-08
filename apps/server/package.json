@@ -1,0 +1,30 @@
+{
+  "name": "server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/server.js",
+  "bin": {
+    "account-crawler": "./dist/bin.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "dev": "tsx watch src/bin.ts",
+    "start": "node dist/bin.js"
+  },
+  "dependencies": {
+    "crawler-core": "workspace:*",
+    "crawlers": "workspace:*",
+    "open": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "dashboard": "workspace:*",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.11",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}
