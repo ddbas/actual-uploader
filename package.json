@@ -1,0 +1,20 @@
+{
+  "name": "account-crawler",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "turbo:build": "turbo run build",
+    "turbo:test": "turbo run test"
+  },
+  "devDependencies": {
+    "turbo": "^2.10.8"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.20.0",
+      "onFail": "download"
+    }
+  }
+}

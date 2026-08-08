@@ -1,0 +1,8 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: build
+      run: mise run build
+
+    - name: test
+      run: mise run test

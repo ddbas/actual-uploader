@@ -1,0 +1,22 @@
+[hooks]
+enter = "lefthook install"
+
+[tasks.build]
+description = "Build the project"
+run = "pnpm turbo:build"
+
+[tasks.install]
+description = "Install dependencies"
+run = "pnpm install"
+
+[tasks.test]
+description = "Run tests"
+run = "pnpm turbo:test"
+
+[tools]
+lefthook = "latest"
+"github:rtk-ai/rtk" = "latest"
+"npm:@colbymchenry/codegraph" = "latest"
+"npm:@fission-ai/openspec" = "latest"
+pnpm = "11.20.0"
+prettier = "latest"
