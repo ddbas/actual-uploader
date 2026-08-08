@@ -3,3 +3,11 @@ node_modules/
 
 # Turborepo
 .turbo/
+
+# Build outputs
+dist/
+coverage/
+
+# Playwright
+test-results/
+playwright-report/

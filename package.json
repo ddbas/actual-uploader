@@ -5,13 +5,17 @@
   "type": "module",
   "scripts": {
     "format": "biome check --write",
+    "turbo:dev": "turbo run dev --parallel",
     "turbo:build": "turbo run build",
-    "turbo:test": "turbo run test"
+    "turbo:test": "turbo run test",
+    "turbo:check-types": "turbo run check-types"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.7",
     "prettier": "3.9.6",
-    "turbo": "^2.10.8"
+    "turbo": "^2.10.8",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   },
   "devEngines": {
     "packageManager": {

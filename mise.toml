@@ -5,6 +5,10 @@ enter = "lefthook install"
 description = "Build the project"
 run = "pnpm turbo:build"
 
+[tasks.dev]
+description = "Run dev processes in parallel"
+run = "pnpm turbo:dev"
+
 [tasks.install]
 description = "Install dependencies"
 run = "pnpm install"

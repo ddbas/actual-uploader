@@ -51,8 +51,7 @@ Introduce, alongside the existing `apps/crawler`:
 
 - `packages/crawler-core` — the `Crawler` interface, `Transaction` type, and a
   crawler registry helper. No UI or server dependencies.
-- `packages/crawlers` (or crawler implementations live directly in
-  `apps/crawler`) — houses the `mock` crawler and future real crawlers, each
+- `packages/crawlers` — houses the `mock` crawler and future real crawlers, each
   implementing `Crawler` from `crawler-core`, using Playwright.
 - `apps/server` — Node/TypeScript HTTP server exposing REST endpoints to list
   crawlers and trigger runs, plus an SSE endpoint that streams
@@ -199,13 +198,11 @@ async function* run() {
   change's tasks/PR rather than blocking on exact "7.*" if it is not yet
   generally available.
 
-## Open Questions
+## Resolved Questions
 
-- Should crawler implementations live in their own `packages/crawlers` package
-  or directly inside `apps/crawler`/`apps/server`? (Design assumes a separate
-  package but this can be simplified during implementation if it adds
-  unnecessary indirection for a single mock crawler.)
-- Should the dashboard's dev server proxy API/SSE calls to the Node server
-  (typical Vite dev workflow), or should the binary always build and serve
-  static assets even in development? (Design assumes standard Vite dev proxy for
-  local development, static build for the shipped binary.)
+- Crawler implementations live in their own `packages/crawlers` package (rather
+  than directly inside `apps/crawler`/`apps/server`), keeping the implementation
+  layer separate from `crawler-core`'s dependency-free types.
+- The dashboard's dev server proxies API/SSE calls to the Node server via Vite's
+  standard dev proxy, taking advantage of Vite's dev server (HMR, fast
+  iteration); the binary builds and serves static assets in production.
