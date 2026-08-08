@@ -10,6 +10,10 @@ pre-commit:
       group:
         parallel: true
         jobs:
+          - name: biome
+            glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc,css}"
+            run: mise exec -- pnpm dlx @biomejs/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+            stage_fixed: true
           - name: markdown
             glob: "*.md"
             run: mise exec -- prettier --write {staged_files}

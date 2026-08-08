@@ -4,10 +4,12 @@
   "description": "",
   "type": "module",
   "scripts": {
+    "format": "biome check --write",
     "turbo:build": "turbo run build",
     "turbo:test": "turbo run test"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.7",
     "prettier": "3.9.6",
     "turbo": "^2.10.8"
   },
