@@ -7,10 +7,11 @@ account.
 
 ## Rules
 
-1. NEVER ever skip the git hooks without exclicit permission from the user.
+1. NEVER skip git hooks without exclicit permission from the user. If a hook
+   fails, fix it.
 2. ALWAYS use Mise for running all tasks and dev tools.
 3. ALWAYS use OpenSpec for proposing and documenting functional requirements.
-   NEVER use it for architectural or technical requirements.
+4. NEVER use OpenSpec for architectural or technical requirements.
 
 ## Contributing
 
