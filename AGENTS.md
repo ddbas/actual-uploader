@@ -10,8 +10,9 @@ account.
 1. NEVER skip git hooks without exclicit permission from the user. If a hook
    fails, fix it.
 2. ALWAYS use Mise for running all tasks and dev tools.
-3. ALWAYS use OpenSpec for proposing and documenting functional requirements.
-4. NEVER use OpenSpec for architectural or technical requirements.
+3. ALWAYS use OpenSpec for proposing and documenting requirements.
+4. Functional requirements and architectural/technical requirements must ALWAYS
+   be in separate OpenSpec specs. They should NEVER be in the same spec.
 
 ## Contributing
 
