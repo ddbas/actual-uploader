@@ -1,8 +1,8 @@
 ## 1. Workspace & Tooling Setup
 
-- [ ] 1.1 Add `packages/crawler-core`, `packages/crawlers` (or decide to fold
-      into `apps/server` per open question), `apps/server`, and `apps/dashboard`
-      to the pnpm workspace, updating `pnpm-workspace.yaml` as needed.
+- [ ] 1.1 Add `packages/crawler-core`, `packages/crawlers`, `apps/server`, and
+      `apps/dashboard` to the pnpm workspace, updating `pnpm-workspace.yaml` as
+      needed.
 - [ ] 1.2 Add TypeScript 7.x as a shared devDependency and a base
       `tsconfig.json` referenced by each new package/app.
 - [ ] 1.3 Configure Vitest (latest) at the workspace/root level with per-package
@@ -10,8 +10,8 @@
 - [ ] 1.4 Wire `build`, `test`, `check-types`, and `dev` scripts for the new
       packages/apps into `turbo.json`'s task pipeline.
 - [ ] 1.5 Reconcile the existing empty `apps/crawler` package with the new
-      structure (repurpose, merge into `apps/server`/`packages/crawlers`, or
-      remove per the chosen layout).
+      structure (repurpose into `packages/crawlers`, or remove it in favor of
+      the new package).
 
 ## 2. Crawler Core (Types & Interface)
 
