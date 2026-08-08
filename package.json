@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "format": "biome check --write",
+    "turbo:dev": "turbo run dev --parallel",
     "turbo:build": "turbo run build",
     "turbo:test": "turbo run test",
-    "turbo:check-types": "turbo run check-types",
-    "turbo:dev": "turbo run dev"
+    "turbo:check-types": "turbo run check-types"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.7",
