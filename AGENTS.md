@@ -13,6 +13,7 @@ account.
 3. ALWAYS use OpenSpec for proposing and documenting requirements.
 4. Functional requirements and architectural/technical requirements must ALWAYS
    be in separate OpenSpec specs. They should NEVER be in the same spec.
+5. ALWAYS commit and push your changes once you've completed a task.
 
 ## Contributing
 
