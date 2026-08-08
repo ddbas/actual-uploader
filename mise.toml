@@ -1,19 +1,31 @@
 [hooks]
-enter = "lefthook install"
+enter = [
+  { task = "lefthook:install" },
+  { task = "codegraph:init" }
+]
 
-[tasks.build]
+[tasks."codegraph:init"]
+description = "Initialize codegraph"
+run = "codegraph init"
+outputs = [".codegraph/codegraph.db"]
+
+[tasks."lefthook:install"]
+description = "Install lefthook"
+run = "lefthook install"
+
+[tasks."pnpm:build"]
 description = "Build the project"
 run = "pnpm turbo:build"
 
-[tasks.dev]
+[tasks."pnpm:dev"]
 description = "Run dev processes in parallel"
 run = "pnpm turbo:dev"
 
-[tasks.install]
+[tasks."pnpm:install"]
 description = "Install dependencies"
 run = "pnpm install"
 
-[tasks.test]
+[tasks."pnpm:test"]
 description = "Run tests"
 run = "pnpm turbo:test"
 
