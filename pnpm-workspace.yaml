@@ -3,3 +3,7 @@ packages:
   - "packages/*"
 allowBuilds:
   esbuild: true
+packageExtensions:
+  "@testing-library/jest-dom":
+    peerDependencies:
+      vitest: "*"
