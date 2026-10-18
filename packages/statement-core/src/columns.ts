@@ -10,6 +10,14 @@ export interface ColumnInfo {
   looksLikeDate: boolean;
   /** Most non-empty values look like money amounts. */
   looksLikeAmount: boolean;
+  /** Share of non-empty values ending in cents ("4.50", "12,5"), 0-1. */
+  decimalRatio: number;
+  /** Share of non-empty values containing letters (0-1). */
+  letterRatio: number;
+  /** Distinct values / non-empty values (0-1); payees vary, statuses repeat. */
+  variety: number;
+  /** Average length of non-empty values. */
+  avgLength: number;
 }
 
 const MATCH_THRESHOLD = 0.8;
@@ -33,6 +41,20 @@ export function analyzeColumns(
       looksLikeDate: detectDateFormats(values).length > 0,
       looksLikeAmount:
         values.length > 0 && amounts / values.length >= MATCH_THRESHOLD,
+      decimalRatio:
+        values.length > 0
+          ? values.filter((v) => /[.,]\d{1,2}\D{0,3}$/.test(v)).length /
+            values.length
+          : 0,
+      letterRatio:
+        values.length > 0
+          ? values.filter((v) => /\p{L}/u.test(v)).length / values.length
+          : 0,
+      variety: values.length > 0 ? new Set(values).size / values.length : 0,
+      avgLength:
+        values.length > 0
+          ? values.reduce((n, v) => n + v.length, 0) / values.length
+          : 0,
     };
   });
 }

@@ -101,6 +101,20 @@ user change any of it.
 - **THEN** those columns are pre-assigned to date, payee, outflow and inflow,
   and the split amount layout is enabled
 
+#### Scenario: Payee is detected from values
+
+- **WHEN** no header identifies the payee
+- **THEN** the leftover text column that looks most like merchant names (mostly
+  letters, varied across rows, reasonably long) is pre-assigned to payee, while
+  account-number columns and repeating status columns (e.g. "Debit"/"Credit")
+  are not
+
+#### Scenario: Amount prefers columns with cents
+
+- **WHEN** no header identifies the amount and several columns hold numbers
+- **THEN** a column whose values have cents (e.g. "-4.50") is preferred over
+  integer-only columns such as account numbers
+
 #### Scenario: Decimal separator is guessed
 
 - **WHEN** the amount values use a decimal comma (e.g. "12,50") and none use a

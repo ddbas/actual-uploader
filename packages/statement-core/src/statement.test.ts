@@ -201,7 +201,7 @@ describe("guessMapping", () => {
     const g = guessMapping(
       windowRows({ hasHeader: false }, parseCsv("2024-01-05,Coffee,-4.50\n")),
     );
-    expect(g.assignments).toEqual({ 0: "date", 2: "amount" });
+    expect(g.assignments).toEqual({ 0: "date", 1: "payee", 2: "amount" });
   });
 });
 
@@ -261,5 +261,35 @@ describe("column analysis", () => {
       sample: "Coffee",
     });
     expect(info[2]).toMatchObject({ looksLikeAmount: true, sample: "-4.50" });
+  });
+});
+
+describe("payee detection", () => {
+  const guess = (csv: string, hasHeader: boolean) =>
+    guessMapping(windowRows({ hasHeader }, parseCsv(csv)));
+
+  it("picks the merchant-like text column without a header", () => {
+    const g = guess(
+      [
+        "2024-01-05,1234567,Debit,TIM HORTONS #123,-4.50",
+        "2024-01-06,1234567,Credit,PAYROLL ACME INC,2000.00",
+        "2024-01-07,1234567,Debit,METRO PLUS,-35.10",
+      ].join("\n"),
+      false,
+    );
+    expect(g.assignments).toMatchObject({ 0: "date", 3: "payee", 4: "amount" });
+  });
+
+  it("falls back to values when no header matches", () => {
+    const g = guess(
+      "When,How,Who,Sum\n2024-01-05,Debit,Tim Hortons,-4.50\n2024-01-06,Credit,Acme Payroll,20\n2024-01-07,Debit,Metro,-3\n",
+      true,
+    );
+    expect(g.assignments[2]).toBe("payee");
+  });
+
+  it("leaves payee unset when nothing looks like one", () => {
+    const g = guess("2024-01-05,-4.50,98765\n2024-01-06,3.00,98766\n", false);
+    expect(Object.values(g.assignments)).not.toContain("payee");
   });
 });

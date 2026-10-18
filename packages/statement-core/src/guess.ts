@@ -72,10 +72,30 @@ export function guessMapping(window: RowWindow): MappingGuess {
       firstUnused((c) => c.looksLikeDate),
     );
   if (!has("amount") && !(has("debit") && has("credit"))) {
+    // Prefer columns with cents ("-4.50") over integer-only ones such as
+    // account numbers.
+    const amountLike = (c: (typeof info)[number]) =>
+      c.looksLikeAmount && !c.looksLikeDate;
     take(
       "amount",
-      firstUnused((c) => c.looksLikeAmount && !c.looksLikeDate),
+      firstUnused((c) => amountLike(c) && c.decimalRatio >= 0.8) ??
+        firstUnused(amountLike),
     );
+  }
+
+  // Payee: the leftover text column that looks most like merchant names —
+  // mostly words, varied from row to row, and reasonably long. This skips
+  // account numbers (no letters) and Debit/Credit-style status columns
+  // (few distinct values).
+  if (!has("payee")) {
+    let best: { index: number; score: number } | undefined;
+    for (const c of info) {
+      if (used.has(c.index) || c.looksLikeDate || c.looksLikeAmount) continue;
+      if (!c.hasValues || c.letterRatio < 0.8) continue;
+      const score = c.variety * Math.min(c.avgLength, 30);
+      if (!best || score > best.score) best = { index: c.index, score };
+    }
+    take("payee", best?.index);
   }
 
   const amountKind = has("debit") && has("credit") ? "split" : "single";
