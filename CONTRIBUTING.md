@@ -3,38 +3,30 @@
 This project uses [mise](https://mise.jdx.dev) for managing dev tools,
 environment variables, and tasks.
 
-## Setup
-
-Install dev tools.
-
-```sh
-mise install
-```
-
 ## Tasks
 
-List available tasks with...
+List the available tasks.
 
 ```sh
 mise tasks
 ```
 
-then run a task with...
+Run a task.
 
 ```sh
 mise run <task>
 ```
 
-## Dev Tools
+## Tools
 
-List available dev tools with...
+List the available dev tools.
 
 ```sh
 mise list
 ```
 
-then run a dev tool with...
+Run a dev tool.
 
 ```sh
-mise exec -- <dev-tool>
+mise exec -- <devtool>
 ```
