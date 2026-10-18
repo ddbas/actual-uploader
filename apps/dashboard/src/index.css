@@ -169,3 +169,14 @@ td {
 .invalid {
   color: #b00020;
 }
+.mappings {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.mappings .field {
+  min-width: 12rem;
+}
+.required::after {
+  content: " *";
+}

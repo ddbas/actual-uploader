@@ -28,27 +28,37 @@ const DELIMITERS: Array<[string, string]> = [
   ["~", "Tilde ( ~ )"],
 ];
 
-const FIELDS: Array<{ key: FieldKey; label: string; required: boolean }> = [
-  { key: "date", label: "Date", required: true },
-  { key: "amount", label: "Amount", required: true },
-  { key: "debit", label: "Debit", required: true },
-  { key: "credit", label: "Credit", required: true },
-  { key: "inOut", label: "In/Out", required: true },
-  { key: "payee", label: "Payee", required: false },
-  { key: "notes", label: "Notes", required: false },
-  { key: "importedId", label: "Source id", required: false },
-];
-
+/** Which amount-related fields apply for each layout. */
 const AMOUNT_FIELDS: Record<AmountKind, FieldKey[]> = {
   single: ["amount"],
   split: ["debit", "credit"],
-  inOut: ["amount", "inOut"],
+  inOut: ["inOut", "amount"],
 };
 
+const AMOUNTISH: FieldKey[] = ["amount", "debit", "credit", "inOut"];
+
 function isAllowed(field: FieldKey, kind: AmountKind): boolean {
-  const amountish: FieldKey[] = ["amount", "debit", "credit", "inOut"];
-  return !amountish.includes(field) || AMOUNT_FIELDS[kind].includes(field);
+  return !AMOUNTISH.includes(field) || AMOUNT_FIELDS[kind].includes(field);
 }
+
+const FIELD_LABELS: Record<FieldKey, string> = {
+  date: "Date",
+  payee: "Payee",
+  notes: "Notes",
+  importedId: "Source id",
+  amount: "Amount",
+  debit: "Outflow",
+  credit: "Inflow",
+  inOut: "In/Out",
+};
+
+const REQUIRED_FIELDS: FieldKey[] = [
+  "date",
+  "amount",
+  "debit",
+  "credit",
+  "inOut",
+];
 
 export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
   const [name, setName] = useState("");
@@ -62,8 +72,8 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
   const [decimalSeparator, setDecimalSeparator] = useState<"." | ",">(".");
   const [flipAmount, setFlipAmount] = useState(false);
   const [outValue, setOutValue] = useState("");
-  /** Which transaction field each column (by index) represents. */
-  const [assignments, setAssignments] = useState<Record<number, FieldKey>>({});
+  /** Which column (by index) supplies each transaction field. */
+  const [mapping, setMapping] = useState<Partial<Record<FieldKey, number>>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const rows = useMemo(
@@ -79,9 +89,6 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
     ...rows.slice(skipStartLines).map((r) => r.length),
   );
 
-  const columnLabel = (i: number) =>
-    header?.[i]?.trim() ? header[i] : `Column ${i + 1}`;
-
   /** Auto-detect mappings (like Actual Budget) whenever the file is re-read. */
   function autoMap(
     text: string,
@@ -96,7 +103,11 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
         parseCsv(text, delim),
       ),
     );
-    setAssignments(guess.assignments);
+    setMapping(
+      Object.fromEntries(
+        Object.entries(guess.assignments).map(([col, f]) => [f, Number(col)]),
+      ),
+    );
     setAmountKind(guess.amountKind);
     setDateFormat(guess.dateFormat);
     setDecimalSeparator(guess.decimalSeparator);
@@ -128,10 +139,7 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
     if (fileText !== null) autoMap(fileText, d, h, s, e);
   }
 
-  const columnOf = (field: FieldKey): number | undefined => {
-    const hit = Object.entries(assignments).find(([, f]) => f === field);
-    return hit ? Number(hit[0]) : undefined;
-  };
+  const columnOf = (field: FieldKey): number | undefined => mapping[field];
 
   const draft = {
     name,
@@ -167,28 +175,15 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
   errors.push(...validateUploadType(draft));
   const valid = errors.length === 0;
 
-  const availableFields = FIELDS.filter((f) => isAllowed(f.key, amountKind));
-
-  function assign(column: number, field: FieldKey | "") {
-    setAssignments((prev) => {
-      const next = { ...prev };
-      delete next[column];
-      if (field !== "") {
-        // A field can only come from one column.
-        for (const [k, v] of Object.entries(next)) {
-          if (v === field) delete next[Number(k)];
-        }
-        next[column] = field;
-      }
-      return next;
-    });
+  function assign(field: FieldKey, column: number | undefined) {
+    setMapping((prev) => ({ ...prev, [field]: column }));
   }
 
   function changeAmountKind(kind: AmountKind) {
     setAmountKind(kind);
-    setAssignments((prev) =>
+    setMapping((prev) =>
       Object.fromEntries(
-        Object.entries(prev).filter(([, f]) => isAllowed(f, kind)),
+        Object.entries(prev).filter(([f]) => isAllowed(f as FieldKey, kind)),
       ),
     );
   }
@@ -203,12 +198,39 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
   }
 
   // Show the date separator seen in the file in the format labels, as Actual does.
-  const dateIndex = columnOf("date");
+  const dateIndex = mapping.date;
   const dateSample =
     dateIndex === undefined ? "" : (dataRows[0]?.[dateIndex] ?? "");
   const dateSeparator = dateSample.match(/[/.,\-\\]/)?.[0] ?? " ";
 
   const money = (cents: number) => (cents / 100).toFixed(2);
+
+  const visibleFields: FieldKey[] = [
+    "date",
+    "payee",
+    "notes",
+    "importedId",
+    ...AMOUNT_FIELDS[amountKind],
+  ];
+
+  const sampleRow = dataRows[0] ?? [];
+  const optionLabel = (i: number) =>
+    header?.[i]?.trim()
+      ? (header[i] as string)
+      : `Column ${i + 1} (${(sampleRow[i] ?? "").trim()})`;
+
+  /** Outflow/inflow preview cell, derived from the final (flipped) amount. */
+  function splitCell(
+    amount: number | null,
+    anyRaw: boolean,
+    side: "out" | "in",
+  ) {
+    if (amount === null) {
+      return anyRaw ? <span className="invalid">Invalid</span> : null;
+    }
+    if (side === "out") return amount < 0 ? money(amount) : null;
+    return amount > 0 ? money(amount) : null;
+  }
 
   return (
     <section aria-label="New upload type" className="wizard">
@@ -287,30 +309,35 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
 
             <fieldset>
               <legend>Amount options</legend>
-              <label className="field">
-                <span>Amount layout</span>
-                <select
-                  value={amountKind}
+              <label className="field inline">
+                <input
+                  type="checkbox"
+                  checked={amountKind === "split"}
                   onChange={(e) =>
-                    changeAmountKind(e.target.value as AmountKind)
+                    changeAmountKind(e.target.checked ? "split" : "single")
                   }
-                >
-                  <option value="single">Single signed amount column</option>
-                  <option value="split">
-                    Separate debit and credit columns
-                  </option>
-                  <option value="inOut">
-                    Amount column plus an in/out column
-                  </option>
-                </select>
+                />
+                <span>Split amount into separate inflow/outflow columns</span>
+              </label>
+              <label className="field inline">
+                <input
+                  type="checkbox"
+                  checked={amountKind === "inOut"}
+                  onChange={(e) =>
+                    changeAmountKind(e.target.checked ? "inOut" : "single")
+                  }
+                />
+                <span>
+                  Select a column to specify if the amount goes in/out
+                </span>
               </label>
               {amountKind === "inOut" ? (
                 <label className="field">
-                  <span>Value that marks money going out</span>
+                  <span>In/Out outflow value</span>
                   <input
                     type="text"
                     value={outValue}
-                    placeholder="e.g. Debit"
+                    placeholder="Value for out rows, e.g. Debit"
                     onChange={(e) => setOutValue(e.target.value)}
                   />
                 </label>
@@ -321,7 +348,7 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
                   checked={flipAmount}
                   onChange={(e) => setFlipAmount(e.target.checked)}
                 />
-                <span>Flip amount (swap inflows and outflows)</span>
+                <span>Flip amount</span>
               </label>
               <label className="field">
                 <span>Decimal separator</span>
@@ -355,73 +382,69 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
             </fieldset>
           </div>
 
-          <h3>Choose what each column represents</h3>
+          <h3>Map fields to columns</h3>
           <p className="hint">
-            Columns were guessed from the file. Fields marked * are required.
+            Columns were guessed from the file. Fields marked * are required; a
+            column can only feed one field.
           </p>
-          <div className="preview-scroll">
-            <table className="preview" aria-label="File preview">
-              <thead>
-                <tr>
-                  {Array.from({ length: columnCount }, (_, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
-                    <th key={i}>
-                      <select
-                        aria-label={`Field for ${columnLabel(i)}`}
-                        value={assignments[i] ?? ""}
-                        onChange={(e) =>
-                          assign(i, e.target.value as FieldKey | "")
-                        }
-                      >
-                        <option value="">Ignore</option>
-                        {availableFields
-                          .filter(
-                            (f) =>
-                              assignments[i] === f.key ||
-                              columnOf(f.key) === undefined,
-                          )
-                          .map((f) => (
-                            <option key={f.key} value={f.key}>
-                              {f.label}
-                              {f.required ? " *" : ""}
-                            </option>
-                          ))}
-                      </select>
-                    </th>
-                  ))}
-                </tr>
-                <tr>
-                  {Array.from({ length: columnCount }, (_, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
-                    <th key={i}>{columnLabel(i)}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {dataRows.slice(0, PREVIEW_ROWS).map((row, r) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional
-                  <tr key={r}>
-                    {Array.from({ length: columnCount }, (_, i) => (
-                      // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
-                      <td key={i}>{row[i] ?? ""}</td>
+          <div className="mappings">
+            {visibleFields.map((field) => (
+              <label key={field} className="field">
+                <span
+                  className={
+                    REQUIRED_FIELDS.includes(field) ? "required" : undefined
+                  }
+                >
+                  {FIELD_LABELS[field]}
+                </span>
+                <select
+                  value={mapping[field] ?? ""}
+                  onChange={(e) =>
+                    assign(
+                      field,
+                      e.target.value === ""
+                        ? undefined
+                        : Number(e.target.value),
+                    )
+                  }
+                >
+                  <option value="">Choose field…</option>
+                  {Array.from({ length: columnCount }, (_, i) => i)
+                    .filter(
+                      (i) =>
+                        mapping[field] === i ||
+                        !visibleFields.some((f) => mapping[f] === i),
+                    )
+                    .map((i) => (
+                      <option key={i} value={i}>
+                        {optionLabel(i)}
+                      </option>
                     ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </select>
+              </label>
+            ))}
           </div>
 
           <h3>Transaction preview</h3>
-          {!valid ? (
-            <p>Map the required fields to see a preview.</p>
-          ) : (
+          <div className="preview-scroll">
             <table className="preview" aria-label="Transaction preview">
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>Amount</th>
                   <th>Payee</th>
                   <th>Notes</th>
+                  <th>Source id</th>
+                  {amountKind === "split" ? (
+                    <>
+                      <th>Outflow</th>
+                      <th>Inflow</th>
+                    </>
+                  ) : (
+                    <>
+                      {amountKind === "inOut" ? <th>In/Out</th> : null}
+                      <th>Amount</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -430,27 +453,59 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
                     id: string;
                   };
                   const { date, amount } = interpretRow(t, row);
-                  const rawDate = (row[t.dateColumn] ?? "").trim();
+                  const at = (f: FieldKey) => {
+                    const c = mapping[f];
+                    return c === undefined ? "" : (row[c] ?? "").trim();
+                  };
+                  const rawDate = at("date");
+                  const anyRaw = at("debit") !== "" || at("credit") !== "";
                   return (
                     // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional
                     <tr key={r}>
                       <td>
-                        <span className="raw">{rawDate || "Empty"} →</span>{" "}
-                        <span className={date ? "parsed" : "invalid"}>
-                          {date ?? "Invalid"}
-                        </span>
+                        {mapping.date === undefined ? null : (
+                          <>
+                            <span className="raw">{rawDate || "Empty"} →</span>{" "}
+                            <span className={date ? "parsed" : "invalid"}>
+                              {date ?? "Invalid"}
+                            </span>
+                          </>
+                        )}
                       </td>
-                      <td className={amount === null ? "invalid" : ""}>
-                        {amount === null ? "Invalid" : money(amount)}
-                      </td>
-                      <td>{(row[t.payeeColumn ?? -1] ?? "").trim()}</td>
-                      <td>{(row[t.notesColumn ?? -1] ?? "").trim()}</td>
+                      <td>{at("payee")}</td>
+                      <td>{at("notes")}</td>
+                      <td>{at("importedId")}</td>
+                      {amountKind === "split" ? (
+                        <>
+                          <td>{splitCell(amount, anyRaw, "out")}</td>
+                          <td>{splitCell(amount, anyRaw, "in")}</td>
+                        </>
+                      ) : (
+                        <>
+                          {amountKind === "inOut" ? (
+                            <td>{at("inOut")}</td>
+                          ) : null}
+                          <td
+                            className={
+                              mapping.amount !== undefined && amount === null
+                                ? "invalid"
+                                : ""
+                            }
+                          >
+                            {mapping.amount === undefined
+                              ? ""
+                              : amount === null
+                                ? "Invalid"
+                                : money(amount)}
+                          </td>
+                        </>
+                      )}
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-          )}
+          </div>
         </>
       ) : null}
 

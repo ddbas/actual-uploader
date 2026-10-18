@@ -57,51 +57,61 @@ describe("UploadTypesTab", () => {
       screen.getByLabelText("Example CSV file"),
       new File([csv], "ex.csv", { type: "text/csv" }),
     );
-    await screen.findByRole("table", { name: "File preview" });
+    await screen.findByRole("table", { name: "Transaction preview" });
     return user;
   }
-  const field = (col: string) =>
-    screen.getByLabelText(`Field for ${col}`) as HTMLSelectElement;
-  const optionsOf = (col: string) =>
-    within(field(col))
+  const field = (label: string) =>
+    screen.getByLabelText(label) as HTMLSelectElement;
+  const optionsOf = (label: string) =>
+    within(field(label))
       .queryAllByRole("option")
       .map((o) => o.textContent);
+  const preview = () =>
+    screen.getByRole("table", { name: "Transaction preview" });
 
   it("guesses the mapping, previews parsed values and saves", async () => {
     const user = await openWizard(CSV);
     const save = screen.getByRole("button", { name: "Save upload type" });
 
-    // header row is excluded from the data rows
-    const preview = screen.getByRole("table", { name: "File preview" });
-    expect(within(preview).getAllByText("Description")).toHaveLength(1);
-
-    // guessed from header names
-    expect(field("Date").value).toBe("date");
-    expect(field("Debit").value).toBe("debit");
-    expect(field("Credit").value).toBe("credit");
-    expect(field("Description").value).toBe("payee");
+    // guessed from header names, which also selects the split layout
     expect(
-      (screen.getByLabelText("Amount layout") as HTMLSelectElement).value,
-    ).toBe("split");
+      (screen.getByLabelText(/Split amount into separate/) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+    expect(field("Date").selectedOptions[0]?.textContent).toBe("Date");
+    expect(field("Outflow").selectedOptions[0]?.textContent).toBe("Debit");
+    expect(field("Inflow").selectedOptions[0]?.textContent).toBe("Credit");
+    expect(field("Payee").selectedOptions[0]?.textContent).toBe("Description");
 
-    const txPreview = screen.getByRole("table", {
-      name: "Transaction preview",
-    });
-    expect(within(txPreview).getByText("2024-01-05")).toBeTruthy();
-    expect(within(txPreview).getByText("-4.50")).toBeTruthy();
-    expect(within(txPreview).getByText("100.00")).toBeTruthy();
+    // preview columns are the fields, filled from the mapping
+    const headers = within(preview())
+      .getAllByRole("columnheader")
+      .map((h) => h.textContent);
+    expect(headers).toEqual([
+      "Date",
+      "Payee",
+      "Notes",
+      "Source id",
+      "Outflow",
+      "Inflow",
+    ]);
+    expect(within(preview()).getByText("2024-01-05")).toBeTruthy();
+    expect(within(preview()).getByText("Coffee")).toBeTruthy();
+    expect(within(preview()).getByText("-4.50")).toBeTruthy();
+    expect(within(preview()).getByText("100.00")).toBeTruthy();
 
-    // A field already used is not offered on other columns.
-    expect(optionsOf("Description")).not.toContain("Date *");
-    expect(optionsOf("Description")).toContain("Payee");
-    expect(optionsOf("Debit")).not.toContain("Payee");
-    expect(optionsOf("Credit")).not.toContain("Debit *");
+    // A column already used by another field is not offered.
+    expect(optionsOf("Notes")).not.toContain("Description");
+    expect(optionsOf("Notes")).not.toContain("Date");
+    expect(optionsOf("Notes")).not.toContain("Debit");
 
-    // Freeing a field makes it available again.
-    await user.selectOptions(field("Description"), "");
-    expect(optionsOf("Debit")).toContain("Payee");
+    // Freeing a field makes its column available again.
+    await user.selectOptions(field("Payee"), "");
+    expect(optionsOf("Notes")).toContain("Description");
+    expect(within(preview()).queryByText("Coffee")).toBeNull();
 
-    await user.selectOptions(field("Description"), "notes");
+    await user.selectOptions(field("Notes"), "Description");
+    expect(within(preview()).getByText("Coffee")).toBeTruthy();
     expect((save as HTMLButtonElement).disabled).toBe(false);
     await user.click(save);
     await waitFor(() => expect(saved).toHaveLength(1));
@@ -116,29 +126,54 @@ describe("UploadTypesTab", () => {
     });
   });
 
+  it("supports toggling split mode and flipping the amount", async () => {
+    const user = await openWizard(
+      "Date,Payee,Amount\n2024-01-05,Coffee,-4.50\n",
+    );
+    expect(screen.queryByLabelText("Outflow")).toBeNull();
+    expect(within(preview()).getByText("-4.50")).toBeTruthy();
+
+    await user.click(screen.getByLabelText("Flip amount"));
+    expect(within(preview()).getByText("4.50")).toBeTruthy();
+
+    await user.click(screen.getByLabelText(/Split amount into separate/));
+    expect(screen.queryByLabelText("Amount")).toBeNull();
+    expect(field("Outflow").value).toBe("");
+    expect(field("Inflow").value).toBe("");
+    // the amount mapping was dropped, so it's required again
+    expect(
+      screen.getByText(
+        "Outflow column is required".replace("Outflow", "Debit"),
+      ),
+    ).toBeTruthy();
+  });
+
   it("blocks saving until required fields are mapped", async () => {
     const user = await openWizard("foo,bar\nx,y\n");
     const save = screen.getByRole("button", { name: "Save upload type" });
     expect((save as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText("Date column is required")).toBeTruthy();
-    expect(
-      screen.queryByRole("table", { name: "Transaction preview" }),
-    ).toBeNull();
 
-    await user.selectOptions(field("foo"), "date");
-    await user.selectOptions(field("bar"), "amount");
+    await user.selectOptions(field("Date"), "foo");
+    await user.selectOptions(field("Amount"), "bar");
     expect((save as HTMLButtonElement).disabled).toBe(false);
     // "x" isn't a date or amount, so the preview flags it.
-    expect(screen.getAllByText("Invalid").length).toBeGreaterThan(0);
+    expect(within(preview()).getAllByText("Invalid").length).toBe(2);
   });
 
   it("requires the in/out column and value in that layout", async () => {
     const user = await openWizard(CSV);
-    await user.selectOptions(screen.getByLabelText("Amount layout"), "inOut");
+    await user.click(
+      screen.getByLabelText(/specify if the amount goes in\/out/),
+    );
     expect(screen.getByText("In/Out column is required")).toBeTruthy();
     expect(screen.getByText("Out value is required")).toBeTruthy();
-    // debit/credit assignments were dropped for the new layout
-    expect(optionsOf("Debit")).toContain("In/Out *");
-    expect(optionsOf("Debit")).not.toContain("Credit *");
+    expect(screen.queryByLabelText("Outflow")).toBeNull();
+
+    await user.selectOptions(field("Payee"), "");
+    await user.selectOptions(field("In/Out"), "Description");
+    await user.selectOptions(field("Amount"), "Debit");
+    await user.type(screen.getByLabelText("In/Out outflow value"), "Coffee");
+    expect(within(preview()).getByText("-4.50")).toBeTruthy();
   });
 });

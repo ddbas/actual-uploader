@@ -33,18 +33,27 @@ and assigning a source column to each transaction field.
 - **WHEN** the user indicates the file starts with a header
 - **THEN** the header row is excluded from transaction data
 
-#### Scenario: Per-column field selection
+#### Scenario: Field-to-column selection
 
-- **WHEN** the example file is previewed
-- **THEN** each column has a select letting the user choose which transaction
-  field it represents (date, amount, payee, notes, source id) or ignore it, and
-  the user can also choose a date format and decimal separator
+- **WHEN** the example file has been loaded
+- **THEN** a section separate from the preview table shows one select per
+  transaction field (date, payee, notes, source id, and the amount fields for
+  the chosen layout), each listing the file's columns (by header name, or by
+  column number and sample value when there is no header), and the user can also
+  choose a date format and decimal separator
 
-#### Scenario: Each field is used at most once
+#### Scenario: Each column feeds at most one field
 
-- **WHEN** a field is selected for one column
-- **THEN** that field is no longer offered in the selects of the other columns,
+- **WHEN** a column is selected for one field
+- **THEN** that column is no longer offered in the selects of the other fields,
   until it is deselected
+
+#### Scenario: Preview columns are the fields
+
+- **WHEN** the mapping changes
+- **THEN** the preview table, whose columns are the transaction fields rather
+  than the file's columns, immediately shows each sample row's values as
+  selected by the current mapping
 
 #### Scenario: Split debit/credit amounts
 
@@ -62,8 +71,8 @@ user change any of it.
 
 - **WHEN** the user uploads a CSV whose header contains "Date", "Description",
   "Debit" and "Credit"
-- **THEN** those columns are pre-assigned to date, payee, debit and credit, and
-  the amount layout is set to separate debit and credit columns
+- **THEN** those columns are pre-assigned to date, payee, outflow and inflow,
+  and the split amount layout is enabled
 
 #### Scenario: Date format is detected
 
@@ -74,14 +83,15 @@ user change any of it.
 
 The dashboard SHALL let the user set the delimiter, skip a number of lines at
 the start and end of the file, flip the sign of amounts, and choose an amount
-layout: a single signed column, separate debit and credit columns, or an amount
-column plus an in/out column (with the value that marks money going out).
+layout via checkboxes: a single signed column (default), separate outflow and
+inflow columns, or an amount column plus an in/out column (with the value that
+marks money going out).
 
 #### Scenario: In/out layout
 
 - **WHEN** the user chooses the in/out layout
-- **THEN** the per-column selects offer "Amount" and "In/Out", and saving
-  requires both plus the out value
+- **THEN** the field selects offer "Amount" and "In/Out", and saving requires
+  both plus the out value
 
 #### Scenario: Skipped lines
 
