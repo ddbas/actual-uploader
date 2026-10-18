@@ -18,7 +18,8 @@
 - [x] 3.1 "Sources" tab and list
 - [x] 3.2 Creation wizard: options, field-to-column mapping, parsed preview
 - [x] 3.3 Auto-mapping, column filtering, option naming, date format hints
-- [x] 3.4 Tests
+- [x] 3.4 Confirmation prompt before deleting a source
+- [x] 3.5 Tests
 
 ## 4. Follow-ups (not in this change)
 

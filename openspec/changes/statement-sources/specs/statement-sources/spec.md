@@ -16,6 +16,23 @@ to delete an existing one.
 - **WHEN** no sources exist
 - **THEN** the tab shows a message inviting the user to create one
 
+### Requirement: Confirm Before Deleting a Source
+
+The dashboard SHALL NOT delete a source immediately when the user activates its
+delete control. It SHALL first ask the user to confirm, naming the source and
+stating that the deletion cannot be undone, and SHALL delete only on explicit
+confirmation.
+
+#### Scenario: Delete confirmed
+
+- **WHEN** the user activates a source's delete control and then confirms
+- **THEN** the source is deleted and removed from the list
+
+#### Scenario: Delete cancelled
+
+- **WHEN** the user activates a source's delete control and then cancels
+- **THEN** the source is not deleted and remains in the list
+
 ### Requirement: Guided CSV Source Creation
 
 The dashboard SHALL guide the user through creating a CSV source: naming it,

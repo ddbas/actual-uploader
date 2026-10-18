@@ -6,6 +6,7 @@ import { SourceWizard } from "./SourceWizard.js";
 export function SourcesTab() {
   const [types, setTypes] = useState<Source[]>([]);
   const [creating, setCreating] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
     fetchSources()
@@ -45,13 +46,33 @@ export function SourcesTab() {
                   {t.format.toUpperCase()}
                 </div>
               </div>
-              <button
-                type="button"
-                aria-label={`Delete ${t.name}`}
-                onClick={() => deleteSource(t.id).then(refresh)}
-              >
-                Delete
-              </button>
+              {confirmingId === t.id ? (
+                <div role="alertdialog" aria-label={`Confirm delete ${t.name}`}>
+                  <span>Delete "{t.name}"? This cannot be undone.</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      deleteSource(t.id).then(() => {
+                        setConfirmingId(null);
+                        refresh();
+                      })
+                    }
+                  >
+                    Confirm delete
+                  </button>
+                  <button type="button" onClick={() => setConfirmingId(null)}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  aria-label={`Delete ${t.name}`}
+                  onClick={() => setConfirmingId(t.id)}
+                >
+                  Delete
+                </button>
+              )}
             </li>
           ))}
         </ul>

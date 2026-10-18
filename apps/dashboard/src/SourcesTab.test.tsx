@@ -48,6 +48,26 @@ describe("SourcesTab", () => {
     expect(screen.getByText("CSV")).toBeTruthy();
   });
 
+  it("asks for confirmation before deleting a source", async () => {
+    existing = [{ id: "1", name: "Desjardins", format: "csv" }];
+    const user = userEvent.setup();
+    render(<SourcesTab />);
+    await user.click(await screen.findByLabelText("Delete Desjardins"));
+    const calls = () =>
+      (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (c) => c[1]?.method === "DELETE",
+      );
+    expect(calls()).toHaveLength(0);
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(calls()).toHaveLength(0);
+
+    await user.click(screen.getByLabelText("Delete Desjardins"));
+    await user.click(screen.getByRole("button", { name: "Confirm delete" }));
+    await waitFor(() => expect(calls()).toHaveLength(1));
+  });
+
   async function openWizard(csv: string) {
     const user = userEvent.setup();
     render(<SourcesTab />);
