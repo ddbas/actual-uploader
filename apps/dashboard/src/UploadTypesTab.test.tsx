@@ -67,15 +67,26 @@ describe("UploadTypesTab", () => {
     expect(within(preview).getAllByText("Description")).toHaveLength(1);
     expect((save as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText("Date column is required")).toBeTruthy();
+    expect(
+      screen.queryByRole("table", { name: "Transaction preview" }),
+    ).toBeNull();
 
-    await user.selectOptions(screen.getByLabelText("Date column"), "Date");
     await user.selectOptions(screen.getByLabelText("Amount layout"), "split");
-    await user.selectOptions(screen.getByLabelText("Debit column"), "Debit");
-    await user.selectOptions(screen.getByLabelText("Credit column"), "Credit");
-    await user.selectOptions(
-      screen.getByLabelText("Payee column"),
-      "Description",
-    );
+    const field = (col: string) => screen.getByLabelText(`Field for ${col}`);
+    await user.selectOptions(field("Date"), "date");
+    await user.selectOptions(field("Debit"), "debit");
+    await user.selectOptions(field("Credit"), "credit");
+    await user.selectOptions(field("Description"), "payee");
+
+    // A field already used is no longer offered on the other columns.
+    const optionsOf = (col: string) =>
+      within(field(col))
+        .queryAllByRole("option")
+        .map((o) => o.textContent);
+    expect(optionsOf("Description")).not.toContain("Date *");
+    expect(optionsOf("Description")).toContain("Payee");
+    expect(optionsOf("Debit")).not.toContain("Payee");
+    expect(optionsOf("Credit")).not.toContain("Debit *");
 
     const txPreview = await screen.findByRole("table", {
       name: "Transaction preview",

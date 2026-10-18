@@ -33,11 +33,18 @@ and assigning a source column to each transaction field.
 - **WHEN** the user indicates the file starts with a header
 - **THEN** the header row is excluded from transaction data
 
-#### Scenario: Field mapping
+#### Scenario: Per-column field selection
 
-- **WHEN** the user is mapping fields
-- **THEN** they can choose a column for date, amount, payee, notes, and source
-  id, and choose a date format and decimal separator
+- **WHEN** the example file is previewed
+- **THEN** each column has a select letting the user choose which transaction
+  field it represents (date, amount, payee, notes, source id) or ignore it, and
+  the user can also choose a date format and decimal separator
+
+#### Scenario: Each field is used at most once
+
+- **WHEN** a field is selected for one column
+- **THEN** that field is no longer offered in the selects of the other columns,
+  until it is deselected
 
 #### Scenario: Split debit/credit amounts
 

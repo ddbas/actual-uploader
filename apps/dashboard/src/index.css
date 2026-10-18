@@ -129,3 +129,9 @@ td {
   display: flex;
   gap: 0.5rem;
 }
+.preview-scroll {
+  overflow-x: auto;
+}
+.preview th select {
+  width: 100%;
+}
