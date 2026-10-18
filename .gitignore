@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Mise
+.mise/
+
 # Turborepo
 .turbo/
 

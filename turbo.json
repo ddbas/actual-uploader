@@ -11,6 +11,15 @@
     "test": {
       "outputs": ["coverage/**"]
     },
+    "//#format:biome": {
+      "inputs": [
+        "**/*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc,css}",
+        "biome.json"
+      ]
+    },
+    "//#format:prettier": {
+      "inputs": ["**/*.md", ".prettierrc.json", ".prettierignore"]
+    },
     "dev": {
       "persistent": true,
       "cache": false

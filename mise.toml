@@ -1,33 +1,27 @@
+#:schema https://mise.jdx.dev/schema/mise.json
+
+[settings]
+experimental = true
+lockfile = true
+
 [hooks]
-enter = [
-  { task = "lefthook:install" },
-  { task = "codegraph:init" }
-]
+enter = "mise exec -- lefthook install"
 
-[tasks."codegraph:init"]
-description = "Initialize codegraph"
-run = "codegraph init"
-outputs = [".codegraph/codegraph.db"]
-
-[tasks."lefthook:install"]
-description = "Install lefthook"
-run = "lefthook install"
-
-[tasks."pnpm:build"]
+[tasks.build]
 description = "Build the project"
-run = "pnpm turbo:build"
+run = "pnpm build"
 
-[tasks."pnpm:dev"]
+[tasks.dev]
 description = "Run dev processes in parallel"
-run = "pnpm turbo:dev"
+run = "pnpm dev"
 
-[tasks."pnpm:install"]
+[tasks.install]
 description = "Install dependencies"
 run = "pnpm install"
 
-[tasks."pnpm:test"]
+[tasks.test]
 description = "Run tests"
-run = "pnpm turbo:test"
+run = "pnpm test"
 
 [tools]
 lefthook = "latest"

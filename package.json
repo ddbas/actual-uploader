@@ -4,11 +4,13 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "format": "biome check --write",
-    "turbo:dev": "turbo run dev --parallel",
-    "turbo:build": "turbo run build",
-    "turbo:test": "turbo run test",
-    "turbo:check-types": "turbo run check-types"
+    "format": "turbo run //#format:biome //#format:prettier",
+    "format:biome": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true .",
+    "format:prettier": "prettier --write \"**/*.md\"",
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "check-types": "turbo run check-types"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.7",
