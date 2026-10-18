@@ -4,6 +4,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import open from "open";
+import { ActualSettingsStore } from "./actualSettingsStore.js";
 import { createServer } from "./server.js";
 import { SourceStore } from "./sourceStore.js";
 
@@ -15,6 +16,9 @@ async function main() {
     process.env.ACCOUNT_CRAWLER_DATA_DIR ?? join(homedir(), ".account-crawler");
   const { server } = createServer({
     sources: new SourceStore(join(dataDir, "sources.json")),
+    actualSettings: new ActualSettingsStore(
+      join(dataDir, "actual-settings.json"),
+    ),
     staticDir: existsSync(staticDir) ? staticDir : undefined,
   });
 

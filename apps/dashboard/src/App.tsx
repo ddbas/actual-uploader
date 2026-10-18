@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { SourcesTab } from "./SourcesTab.js";
+import { SettingsTab } from "./SettingsTab.js";
 import { UploadTab } from "./UploadTab.js";
 
-type Tab = "upload" | "sources";
+type Tab = "upload" | "settings";
 
 export function App() {
   const [tab, setTab] = useState<Tab>("upload");
@@ -21,13 +21,13 @@ export function App() {
         <button
           type="button"
           role="tab"
-          aria-selected={tab === "sources"}
-          onClick={() => setTab("sources")}
+          aria-selected={tab === "settings"}
+          onClick={() => setTab("settings")}
         >
-          Sources
+          Settings
         </button>
       </div>
-      {tab === "upload" ? <UploadTab /> : <SourcesTab />}
+      {tab === "upload" ? <UploadTab /> : <SettingsTab />}
     </div>
   );
 }

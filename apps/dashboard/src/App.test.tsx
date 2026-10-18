@@ -16,7 +16,7 @@ afterEach(() => {
 });
 
 describe("App", () => {
-  it("shows the Upload tab selected by default, with only Upload and Sources tabs", () => {
+  it("shows the Upload tab selected by default, with only Upload and Settings tabs", () => {
     render(<App />);
 
     expect(screen.getByRole("tab", { name: "Upload" })).toHaveAttribute(
@@ -24,13 +24,17 @@ describe("App", () => {
       "true",
     );
     expect(screen.getAllByRole("tab")).toHaveLength(2);
+    expect(screen.getByRole("tab", { name: "Settings" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("tab", { name: "Sources" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("switches to the Sources tab", async () => {
+  it("switches to the Settings tab", async () => {
     render(<App />);
-    await userEvent.click(screen.getByRole("tab", { name: "Sources" }));
+    await userEvent.click(screen.getByRole("tab", { name: "Settings" }));
 
-    expect(screen.getByRole("tab", { name: "Sources" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: "Settings" })).toHaveAttribute(
       "aria-selected",
       "true",
     );

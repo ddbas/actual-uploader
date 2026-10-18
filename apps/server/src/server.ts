@@ -3,6 +3,7 @@ import { createServer as createHttpServer, type Server } from "node:http";
 import { extname, join } from "node:path";
 import { processCsv, type SourceDraft, validateSource } from "statement-core";
 import { listAccounts } from "./accounts.js";
+import { ActualSettingsStore } from "./actualSettingsStore.js";
 import { SourceStore } from "./sourceStore.js";
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -20,6 +21,8 @@ export interface CreateServerOptions {
   staticDir?: string;
   /** Source storage. Defaults to a non-persistent in-memory store. */
   sources?: SourceStore;
+  /** Actual settings storage. Defaults to a non-persistent in-memory store. */
+  actualSettings?: ActualSettingsStore;
 }
 
 export interface AccountCrawlerServer {
@@ -79,6 +82,7 @@ export function createServer(
   options: CreateServerOptions,
 ): AccountCrawlerServer {
   const sources = options.sources ?? new SourceStore();
+  const actualSettings = options.actualSettings ?? new ActualSettingsStore();
 
   const server = createHttpServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
@@ -92,6 +96,13 @@ export function createServer(
 
     if (req.method === "GET" && url.pathname === "/api/accounts") {
       sendJson(res, 200, listAccounts());
+      return;
+    }
+
+    if (url.pathname === "/api/settings/actual") {
+      handleActualSettings(req, res, actualSettings).catch(() => {
+        sendJson(res, 500, { error: "Internal error" });
+      });
       return;
     }
 
@@ -177,4 +188,32 @@ async function handleSources(
     }
   }
   sendJson(res, 404, { error: "Not found" });
+}
+
+async function handleActualSettings(
+  req: import("node:http").IncomingMessage,
+  res: import("node:http").ServerResponse,
+  store: ActualSettingsStore,
+): Promise<void> {
+  if (req.method === "GET") {
+    sendJson(res, 200, store.get());
+    return;
+  }
+  if (req.method === "PUT") {
+    let body: unknown;
+    try {
+      body = JSON.parse(await readBody(req));
+    } catch {
+      sendJson(res, 400, { errors: { body: "Body must be valid JSON" } });
+      return;
+    }
+    const errors = store.update(body);
+    if (Object.keys(errors).length > 0) {
+      sendJson(res, 400, { errors });
+      return;
+    }
+    sendJson(res, 200, store.get());
+    return;
+  }
+  sendJson(res, 405, { error: "Method not allowed" });
 }
