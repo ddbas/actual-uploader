@@ -135,3 +135,37 @@ td {
 .preview th select {
   width: 100%;
 }
+.options {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.options fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid #ccc;
+}
+.field.inline {
+  flex-direction: row;
+  align-items: center;
+  max-width: none;
+}
+.field.inline input[type="number"] {
+  width: 4rem;
+}
+.hint {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+.raw {
+  opacity: 0.7;
+}
+.parsed {
+  color: #1a7f37;
+}
+.invalid {
+  color: #b00020;
+}

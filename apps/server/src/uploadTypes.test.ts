@@ -12,7 +12,7 @@ const valid = {
   delimiter: ",",
   hasHeader: true,
   dateColumn: 0,
-  dateFormat: "YYYY-MM-DD",
+  dateFormat: "YYYY MM DD",
   amount: { kind: "single", column: 1 },
   decimalSeparator: ".",
 };

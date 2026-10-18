@@ -3,10 +3,13 @@ import {
   DATE_FORMATS,
   type DateFormat,
   detectDelimiter,
-  mapRow,
+  type FieldKey,
+  guessMapping,
+  interpretRow,
   parseCsv,
   type UploadTypeDraft,
   validateUploadType,
+  windowRows,
 } from "statement-core";
 
 export interface UploadTypeWizardProps {
@@ -14,41 +17,51 @@ export interface UploadTypeWizardProps {
   onCancel: () => void;
 }
 
-type FieldKey =
-  | "date"
-  | "amount"
-  | "debit"
-  | "credit"
-  | "payee"
-  | "notes"
-  | "importedId";
+type AmountKind = "single" | "split" | "inOut";
+
+const PREVIEW_ROWS = 5;
+const DELIMITERS: Array<[string, string]> = [
+  [",", "Comma ( , )"],
+  [";", "Semicolon ( ; )"],
+  ["\t", "Tab"],
+  ["|", "Pipe ( | )"],
+  ["~", "Tilde ( ~ )"],
+];
 
 const FIELDS: Array<{ key: FieldKey; label: string; required: boolean }> = [
   { key: "date", label: "Date", required: true },
   { key: "amount", label: "Amount", required: true },
   { key: "debit", label: "Debit", required: true },
   { key: "credit", label: "Credit", required: true },
+  { key: "inOut", label: "In/Out", required: true },
   { key: "payee", label: "Payee", required: false },
   { key: "notes", label: "Notes", required: false },
   { key: "importedId", label: "Source id", required: false },
 ];
 
-const PREVIEW_ROWS = 5;
-const DELIMITERS: Array<[string, string]> = [
-  [",", "Comma"],
-  [";", "Semicolon"],
-  ["\t", "Tab"],
-  ["|", "Pipe"],
-];
+const AMOUNT_FIELDS: Record<AmountKind, FieldKey[]> = {
+  single: ["amount"],
+  split: ["debit", "credit"],
+  inOut: ["amount", "inOut"],
+};
+
+function isAllowed(field: FieldKey, kind: AmountKind): boolean {
+  const amountish: FieldKey[] = ["amount", "debit", "credit", "inOut"];
+  return !amountish.includes(field) || AMOUNT_FIELDS[kind].includes(field);
+}
 
 export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
   const [name, setName] = useState("");
   const [fileText, setFileText] = useState<string | null>(null);
   const [delimiter, setDelimiter] = useState(",");
   const [hasHeader, setHasHeader] = useState(true);
-  const [dateFormat, setDateFormat] = useState<DateFormat>("YYYY-MM-DD");
-  const [amountKind, setAmountKind] = useState<"single" | "split">("single");
+  const [skipStartLines, setSkipStartLines] = useState(0);
+  const [skipEndLines, setSkipEndLines] = useState(0);
+  const [dateFormat, setDateFormat] = useState<DateFormat>("YYYY MM DD");
+  const [amountKind, setAmountKind] = useState<AmountKind>("single");
   const [decimalSeparator, setDecimalSeparator] = useState<"." | ",">(".");
+  const [flipAmount, setFlipAmount] = useState(false);
+  const [outValue, setOutValue] = useState("");
   /** Which transaction field each column (by index) represents. */
   const [assignments, setAssignments] = useState<Record<number, FieldKey>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -57,12 +70,63 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
     () => (fileText === null ? [] : parseCsv(fileText, delimiter)),
     [fileText, delimiter],
   );
-  const columnCount = Math.max(0, ...rows.map((r) => r.length));
-  const header = hasHeader ? rows[0] : undefined;
-  const dataRows = hasHeader ? rows.slice(1) : rows;
+  const { header, data: dataRows } = windowRows(
+    { hasHeader, skipStartLines, skipEndLines },
+    rows,
+  );
+  const columnCount = Math.max(
+    0,
+    ...rows.slice(skipStartLines).map((r) => r.length),
+  );
 
   const columnLabel = (i: number) =>
     header?.[i]?.trim() ? header[i] : `Column ${i + 1}`;
+
+  /** Auto-detect mappings (like Actual Budget) whenever the file is re-read. */
+  function autoMap(
+    text: string,
+    delim: string,
+    header: boolean,
+    start: number,
+    end: number,
+  ) {
+    const guess = guessMapping(
+      windowRows(
+        { hasHeader: header, skipStartLines: start, skipEndLines: end },
+        parseCsv(text, delim),
+      ),
+    );
+    setAssignments(guess.assignments);
+    setAmountKind(guess.amountKind);
+    setDateFormat(guess.dateFormat);
+    setDecimalSeparator(guess.decimalSeparator);
+  }
+
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    const text = await file.text();
+    const delim = detectDelimiter(text);
+    setFileText(text);
+    setDelimiter(delim);
+    autoMap(text, delim, hasHeader, skipStartLines, skipEndLines);
+  }
+
+  function reparse(next: {
+    delimiter?: string;
+    hasHeader?: boolean;
+    skipStartLines?: number;
+    skipEndLines?: number;
+  }) {
+    const d = next.delimiter ?? delimiter;
+    const h = next.hasHeader ?? hasHeader;
+    const s = next.skipStartLines ?? skipStartLines;
+    const e = next.skipEndLines ?? skipEndLines;
+    setDelimiter(d);
+    setHasHeader(h);
+    setSkipStartLines(s);
+    setSkipEndLines(e);
+    if (fileText !== null) autoMap(fileText, d, h, s, e);
+  }
 
   const columnOf = (field: FieldKey): number | undefined => {
     const hit = Object.entries(assignments).find(([, f]) => f === field);
@@ -73,18 +137,28 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
     name,
     format: "csv",
     delimiter,
+    skipStartLines,
+    skipEndLines,
     hasHeader,
     dateColumn: columnOf("date"),
     dateFormat,
     amount:
       amountKind === "single"
         ? { kind: "single", column: columnOf("amount") }
-        : {
-            kind: "split",
-            debitColumn: columnOf("debit"),
-            creditColumn: columnOf("credit"),
-          },
+        : amountKind === "split"
+          ? {
+              kind: "split",
+              debitColumn: columnOf("debit"),
+              creditColumn: columnOf("credit"),
+            }
+          : {
+              kind: "inOut",
+              column: columnOf("amount"),
+              inOutColumn: columnOf("inOut"),
+              outValue,
+            },
     decimalSeparator,
+    flipAmount,
     payeeColumn: columnOf("payee"),
     notesColumn: columnOf("notes"),
     importedIdColumn: columnOf("importedId"),
@@ -93,36 +167,7 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
   errors.push(...validateUploadType(draft));
   const valid = errors.length === 0;
 
-  const mapped = valid
-    ? dataRows
-        .slice(0, PREVIEW_ROWS)
-        .map((row) =>
-          mapRow({ ...(draft as UploadTypeDraft), id: "" }, row, "preview"),
-        )
-    : [];
-
-  async function handleFile(file: File | undefined) {
-    if (!file) return;
-    const text = await file.text();
-    setFileText(text);
-    setDelimiter(detectDelimiter(text));
-    setAssignments({});
-  }
-
-  async function handleSave() {
-    setSaveError(null);
-    try {
-      await onSave(draft as UploadTypeDraft);
-    } catch (e) {
-      setSaveError(e instanceof Error ? e.message : "Failed to save");
-    }
-  }
-
-  const availableFields = FIELDS.filter((f) =>
-    amountKind === "single"
-      ? f.key !== "debit" && f.key !== "credit"
-      : f.key !== "amount",
-  );
+  const availableFields = FIELDS.filter((f) => isAllowed(f.key, amountKind));
 
   function assign(column: number, field: FieldKey | "") {
     setAssignments((prev) => {
@@ -139,16 +184,31 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
     });
   }
 
-  function changeAmountKind(kind: "single" | "split") {
+  function changeAmountKind(kind: AmountKind) {
     setAmountKind(kind);
     setAssignments((prev) =>
       Object.fromEntries(
-        Object.entries(prev).filter(([, f]) =>
-          kind === "single" ? f !== "debit" && f !== "credit" : f !== "amount",
-        ),
+        Object.entries(prev).filter(([, f]) => isAllowed(f, kind)),
       ),
     );
   }
+
+  async function handleSave() {
+    setSaveError(null);
+    try {
+      await onSave(draft as UploadTypeDraft);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "Failed to save");
+    }
+  }
+
+  // Show the date separator seen in the file in the format labels, as Actual does.
+  const dateIndex = columnOf("date");
+  const dateSample =
+    dateIndex === undefined ? "" : (dataRows[0]?.[dateIndex] ?? "");
+  const dateSeparator = dateSample.match(/[/.,\-\\]/)?.[0] ?? " ";
+
+  const money = (cents: number) => (cents / 100).toFixed(2);
 
   return (
     <section aria-label="New upload type" className="wizard">
@@ -166,75 +226,139 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
         <span>Example CSV file</span>
         <input
           type="file"
-          accept=".csv,text/csv"
+          accept=".csv,.tsv,text/csv"
           onChange={(e) => void handleFile(e.target.files?.[0])}
         />
       </label>
 
       {fileText !== null ? (
         <>
-          <label className="field">
-            <span>Delimiter</span>
-            <select
-              value={delimiter}
-              onChange={(e) => {
-                setDelimiter(e.target.value);
-                setAssignments({});
-              }}
-            >
-              {DELIMITERS.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field">
-            <input
-              type="checkbox"
-              checked={hasHeader}
-              onChange={(e) => setHasHeader(e.target.checked)}
-            />
-            <span>First row is a header (ignore it)</span>
-          </label>
+          <div className="options">
+            <fieldset>
+              <legend>CSV options</legend>
+              <label className="field">
+                <span>Delimiter</span>
+                <select
+                  value={delimiter}
+                  onChange={(e) => reparse({ delimiter: e.target.value })}
+                >
+                  {DELIMITERS.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field inline">
+                <input
+                  type="checkbox"
+                  checked={hasHeader}
+                  onChange={(e) => reparse({ hasHeader: e.target.checked })}
+                />
+                <span>First row is a header (ignore it)</span>
+              </label>
+              <label className="field inline">
+                <span>Skip lines at start</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={skipStartLines}
+                  onChange={(e) =>
+                    reparse({
+                      skipStartLines: Math.max(0, Number(e.target.value) || 0),
+                    })
+                  }
+                />
+              </label>
+              <label className="field inline">
+                <span>Skip lines at end</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={skipEndLines}
+                  onChange={(e) =>
+                    reparse({
+                      skipEndLines: Math.max(0, Number(e.target.value) || 0),
+                    })
+                  }
+                />
+              </label>
+            </fieldset>
 
-          <label className="field">
-            <span>Amount layout</span>
-            <select
-              value={amountKind}
-              onChange={(e) =>
-                changeAmountKind(e.target.value as "single" | "split")
-              }
-            >
-              <option value="single">Single amount column</option>
-              <option value="split">Separate debit and credit columns</option>
-            </select>
-          </label>
-          <label className="field">
-            <span>Date format</span>
-            <select
-              value={dateFormat}
-              onChange={(e) => setDateFormat(e.target.value as DateFormat)}
-            >
-              {DATE_FORMATS.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field">
-            <span>Decimal separator</span>
-            <select
-              value={decimalSeparator}
-              onChange={(e) => setDecimalSeparator(e.target.value as "." | ",")}
-            >
-              <option value=".">Period (1,234.56)</option>
-              <option value=",">Comma (1.234,56)</option>
-            </select>
-          </label>
+            <fieldset>
+              <legend>Amount options</legend>
+              <label className="field">
+                <span>Amount layout</span>
+                <select
+                  value={amountKind}
+                  onChange={(e) =>
+                    changeAmountKind(e.target.value as AmountKind)
+                  }
+                >
+                  <option value="single">Single signed amount column</option>
+                  <option value="split">
+                    Separate debit and credit columns
+                  </option>
+                  <option value="inOut">
+                    Amount column plus an in/out column
+                  </option>
+                </select>
+              </label>
+              {amountKind === "inOut" ? (
+                <label className="field">
+                  <span>Value that marks money going out</span>
+                  <input
+                    type="text"
+                    value={outValue}
+                    placeholder="e.g. Debit"
+                    onChange={(e) => setOutValue(e.target.value)}
+                  />
+                </label>
+              ) : null}
+              <label className="field inline">
+                <input
+                  type="checkbox"
+                  checked={flipAmount}
+                  onChange={(e) => setFlipAmount(e.target.checked)}
+                />
+                <span>Flip amount (swap inflows and outflows)</span>
+              </label>
+              <label className="field">
+                <span>Decimal separator</span>
+                <select
+                  value={decimalSeparator}
+                  onChange={(e) =>
+                    setDecimalSeparator(e.target.value as "." | ",")
+                  }
+                >
+                  <option value=".">Period (1,234.56)</option>
+                  <option value=",">Comma (1.234,56)</option>
+                </select>
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <legend>Date options</legend>
+              <label className="field">
+                <span>Date format</span>
+                <select
+                  value={dateFormat}
+                  onChange={(e) => setDateFormat(e.target.value as DateFormat)}
+                >
+                  {DATE_FORMATS.map((f) => (
+                    <option key={f} value={f}>
+                      {f.replace(/ /g, dateSeparator)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </fieldset>
+          </div>
 
           <h3>Choose what each column represents</h3>
+          <p className="hint">
+            Columns were guessed from the file. Fields marked * are required.
+          </p>
           <div className="preview-scroll">
             <table className="preview" aria-label="File preview">
               <thead>
@@ -288,7 +412,7 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
           </div>
 
           <h3>Transaction preview</h3>
-          {mapped.length === 0 ? (
+          {!valid ? (
             <p>Map the required fields to see a preview.</p>
           ) : (
             <table className="preview" aria-label="Transaction preview">
@@ -301,22 +425,29 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
                 </tr>
               </thead>
               <tbody>
-                {mapped.map((m, i) =>
-                  typeof m === "string" ? (
+                {dataRows.slice(0, PREVIEW_ROWS).map((row, r) => {
+                  const t = draft as unknown as UploadTypeDraft & {
+                    id: string;
+                  };
+                  const { date, amount } = interpretRow(t, row);
+                  const rawDate = (row[t.dateColumn] ?? "").trim();
+                  return (
                     // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional
-                    <tr key={i} className="row-error">
-                      <td colSpan={4}>{m}</td>
+                    <tr key={r}>
+                      <td>
+                        <span className="raw">{rawDate || "Empty"} →</span>{" "}
+                        <span className={date ? "parsed" : "invalid"}>
+                          {date ?? "Invalid"}
+                        </span>
+                      </td>
+                      <td className={amount === null ? "invalid" : ""}>
+                        {amount === null ? "Invalid" : money(amount)}
+                      </td>
+                      <td>{(row[t.payeeColumn ?? -1] ?? "").trim()}</td>
+                      <td>{(row[t.notesColumn ?? -1] ?? "").trim()}</td>
                     </tr>
-                  ) : (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional
-                    <tr key={i}>
-                      <td>{m.date}</td>
-                      <td>{((m.amount ?? 0) / 100).toFixed(2)}</td>
-                      <td>{m.payee_name ?? ""}</td>
-                      <td>{m.notes ?? ""}</td>
-                    </tr>
-                  ),
-                )}
+                  );
+                })}
               </tbody>
             </table>
           )}

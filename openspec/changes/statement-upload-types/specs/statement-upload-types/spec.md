@@ -51,6 +51,44 @@ and assigning a source column to each transaction field.
 - **WHEN** the institution reports amounts in separate debit and credit columns
 - **THEN** the user can choose "separate debit and credit columns" and pick both
 
+### Requirement: Mapping Is Guessed From the Example File
+
+When an example file is loaded (or its parsing options change), the dashboard
+SHALL propose a mapping by inspecting header names and the shape of the first
+data row, pre-select the detected date format and decimal separator, and let the
+user change any of it.
+
+#### Scenario: Columns are pre-assigned
+
+- **WHEN** the user uploads a CSV whose header contains "Date", "Description",
+  "Debit" and "Credit"
+- **THEN** those columns are pre-assigned to date, payee, debit and credit, and
+  the amount layout is set to separate debit and credit columns
+
+#### Scenario: Date format is detected
+
+- **WHEN** the date column's first value is "2024-01-05"
+- **THEN** the date format "YYYY MM DD" is pre-selected
+
+### Requirement: File and Amount Options
+
+The dashboard SHALL let the user set the delimiter, skip a number of lines at
+the start and end of the file, flip the sign of amounts, and choose an amount
+layout: a single signed column, separate debit and credit columns, or an amount
+column plus an in/out column (with the value that marks money going out).
+
+#### Scenario: In/out layout
+
+- **WHEN** the user chooses the in/out layout
+- **THEN** the per-column selects offer "Amount" and "In/Out", and saving
+  requires both plus the out value
+
+#### Scenario: Skipped lines
+
+- **WHEN** the user skips lines at the start of the file
+- **THEN** those lines are excluded from the preview, and the header (if any) is
+  taken from the first line after them
+
 ### Requirement: Required Fields Must Be Mapped Before Saving
 
 An upload type SHALL NOT be savable until it has a name and a source for every
@@ -70,10 +108,15 @@ required transaction field: date and amount.
 ### Requirement: Mapped Preview of Transactions
 
 Before saving, the dashboard SHALL show the example file's rows interpreted as
-transactions so the user can verify the mapping, flagging rows that fail to
-parse.
+transactions so the user can verify the mapping, showing each date as its raw
+value and parsed result, and flagging dates and amounts that fail to parse.
 
 #### Scenario: Preview reflects mapping
 
 - **WHEN** the user changes a column assignment
 - **THEN** the transaction preview updates immediately
+
+#### Scenario: Unparseable values are flagged
+
+- **WHEN** a date or amount cell cannot be parsed
+- **THEN** the preview shows "Invalid" for it

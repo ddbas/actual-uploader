@@ -43,3 +43,27 @@ package `statement-core` with no I/O, used by both server and dashboard.
 
 - **WHEN** the same file and mapping are processed in the dashboard and server
 - **THEN** the resulting transactions are identical
+
+### Requirement: Flexible Date Parsing
+
+Date parsing SHALL be based on field order and year width (`YYYY MM DD`,
+`YY MM DD`, `MM DD YYYY`, `MM DD YY`, `DD MM YYYY`, `DD MM YY`) independent of
+the separator, and SHALL accept month names, unseparated digits, and two-digit
+years (read as 20YY). Invalid calendar dates SHALL be rejected.
+
+#### Scenario: Separator-agnostic parsing
+
+- **WHEN** "05.03.24" is parsed as `DD MM YY`
+- **THEN** the result is `2024-03-05`
+
+### Requirement: Processing Honors Skipped Lines and Amount Options
+
+Processing SHALL ignore the configured skipped lines at the start and end of the
+file, ignore the header row when configured, apply flip-amount, and compute
+amounts for the single, debit/credit, and in/out layouts. Row errors SHALL
+report row numbers relative to the original file.
+
+#### Scenario: In/out amounts
+
+- **WHEN** a row's in/out cell equals the configured out value
+- **THEN** its amount is negative, otherwise positive
