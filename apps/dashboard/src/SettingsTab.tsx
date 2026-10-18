@@ -19,20 +19,24 @@ export function SettingsTab() {
   const Page = pages.find((p) => p.id === pageId)?.component;
 
   return (
-    <div className="settings">
-      <nav className="settings-nav" aria-label="Settings pages">
-        {pages.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            aria-current={p.id === pageId ? "page" : undefined}
-            onClick={() => setPageId(p.id)}
-          >
-            {p.label}
-          </button>
-        ))}
+    <div className="flex items-start gap-6">
+      <nav aria-label="Settings pages">
+        <ul className="menu w-40 rounded-box bg-base-200">
+          {pages.map((p) => (
+            <li key={p.id}>
+              <button
+                type="button"
+                className={p.id === pageId ? "menu-active" : ""}
+                aria-current={p.id === pageId ? "page" : undefined}
+                onClick={() => setPageId(p.id)}
+              >
+                {p.label}
+              </button>
+            </li>
+          ))}
+        </ul>
       </nav>
-      <div className="settings-page">{Page ? <Page /> : null}</div>
+      <div className="flex-1">{Page ? <Page /> : null}</div>
     </div>
   );
 }

@@ -268,28 +268,30 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
     side: "out" | "in",
   ) {
     if (amount === null) {
-      return anyRaw ? <span className="invalid">Invalid</span> : null;
+      return anyRaw ? <span className="text-error">Invalid</span> : null;
     }
     if (side === "out") return amount < 0 ? money(amount) : null;
     return amount > 0 ? money(amount) : null;
   }
 
   return (
-    <section aria-label="New source" className="wizard">
-      <h2>New source</h2>
-      <label className="field">
-        <span>Name</span>
+    <section aria-label="New source" className="flex max-w-4xl flex-col gap-4">
+      <h2 className="text-xl font-semibold">New source</h2>
+      <label className="fieldset">
+        <span className="label">Name</span>
         <input
           type="text"
+          className="input w-full max-w-sm"
           value={name}
           placeholder="e.g. Desjardins checking & savings"
           onChange={(e) => setName(e.target.value)}
         />
       </label>
-      <label className="field">
-        <span>Example CSV file</span>
+      <label className="fieldset">
+        <span className="label">Example CSV file</span>
         <input
           type="file"
+          className="file-input w-full max-w-sm"
           accept=".csv,.tsv,text/csv"
           onChange={(e) => void handleFile(e.target.files?.[0])}
         />
@@ -297,12 +299,13 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
 
       {fileText !== null ? (
         <>
-          <div className="options">
-            <fieldset>
-              <legend>CSV options</legend>
-              <label className="field">
-                <span>Delimiter</span>
+          <div className="flex flex-wrap items-start gap-4">
+            <fieldset className="fieldset rounded-box border border-base-300 bg-base-200 p-4">
+              <legend className="fieldset-legend">CSV options</legend>
+              <label className="fieldset">
+                <span className="label">Delimiter</span>
                 <select
+                  className="select"
                   value={delimiter}
                   onChange={(e) => reparse({ delimiter: e.target.value })}
                 >
@@ -313,18 +316,20 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
                   ))}
                 </select>
               </label>
-              <label className="field inline">
+              <label className="label cursor-pointer justify-start gap-2">
                 <input
                   type="checkbox"
+                  className="checkbox checkbox-sm"
                   checked={hasHeader}
                   onChange={(e) => reparse({ hasHeader: e.target.checked })}
                 />
                 <span>First row is a header (ignore it)</span>
               </label>
-              <label className="field inline">
+              <label className="label gap-2">
                 <span>Skip lines at start</span>
                 <input
                   type="number"
+                  className="input input-sm w-20"
                   min={0}
                   value={skipStartLines}
                   onChange={(e) =>
@@ -334,10 +339,11 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
                   }
                 />
               </label>
-              <label className="field inline">
+              <label className="label gap-2">
                 <span>Skip lines at end</span>
                 <input
                   type="number"
+                  className="input input-sm w-20"
                   min={0}
                   value={skipEndLines}
                   onChange={(e) =>
@@ -349,11 +355,12 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
               </label>
             </fieldset>
 
-            <fieldset>
-              <legend>Amount options</legend>
-              <label className="field inline">
+            <fieldset className="fieldset rounded-box border border-base-300 bg-base-200 p-4">
+              <legend className="fieldset-legend">Amount options</legend>
+              <label className="label cursor-pointer justify-start gap-2">
                 <input
                   type="checkbox"
+                  className="checkbox checkbox-sm"
                   checked={amountKind === "split"}
                   onChange={(e) =>
                     changeAmountKind(e.target.checked ? "split" : "single")
@@ -361,9 +368,10 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
                 />
                 <span>Split amount into separate inflow/outflow columns</span>
               </label>
-              <label className="field inline">
+              <label className="label cursor-pointer justify-start gap-2">
                 <input
                   type="checkbox"
+                  className="checkbox checkbox-sm"
                   checked={amountKind === "inOut"}
                   onChange={(e) =>
                     changeAmountKind(e.target.checked ? "inOut" : "single")
@@ -374,27 +382,30 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
                 </span>
               </label>
               {amountKind === "inOut" ? (
-                <label className="field">
-                  <span>In/Out outflow value</span>
+                <label className="fieldset">
+                  <span className="label">In/Out outflow value</span>
                   <input
                     type="text"
+                    className="input"
                     value={outValue}
                     placeholder="Value for out rows, e.g. Debit"
                     onChange={(e) => setOutValue(e.target.value)}
                   />
                 </label>
               ) : null}
-              <label className="field inline">
+              <label className="label cursor-pointer justify-start gap-2">
                 <input
                   type="checkbox"
+                  className="checkbox checkbox-sm"
                   checked={flipAmount}
                   onChange={(e) => setFlipAmount(e.target.checked)}
                 />
                 <span>Flip amount</span>
               </label>
-              <label className="field">
-                <span>Decimal separator</span>
+              <label className="fieldset">
+                <span className="label">Decimal separator</span>
                 <select
+                  className="select"
                   value={decimalSeparator}
                   onChange={(e) =>
                     setDecimalSeparator(e.target.value as "." | ",")
@@ -406,11 +417,12 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
               </label>
             </fieldset>
 
-            <fieldset>
-              <legend>Date options</legend>
-              <label className="field">
-                <span>Date format</span>
+            <fieldset className="fieldset rounded-box border border-base-300 bg-base-200 p-4">
+              <legend className="fieldset-legend">Date options</legend>
+              <label className="fieldset">
+                <span className="label">Date format</span>
                 <select
+                  className="select"
                   value={dateFormat}
                   onChange={(e) => setDateFormat(e.target.value as DateFormat)}
                 >
@@ -422,7 +434,7 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
                 </select>
               </label>
               {otherDateFormats.length > 0 ? (
-                <p className="hint" role="note">
+                <p className="text-sm opacity-70" role="note">
                   The sample dates also fit{" "}
                   {otherDateFormats
                     .map((f) => f.replace(/ /g, dateSeparator))
@@ -431,15 +443,15 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
                 </p>
               ) : null}
               {mapping.date !== undefined && dateCandidates.length === 0 ? (
-                <p className="hint invalid" role="note">
+                <p className="text-sm text-error" role="note">
                   No date format fits the sample dates.
                 </p>
               ) : null}
             </fieldset>
           </div>
 
-          <h3>Map fields to columns</h3>
-          <p className="hint">
+          <h3 className="text-lg font-semibold">Map fields to columns</h3>
+          <p className="text-sm opacity-70">
             Columns were guessed from the file. Fields marked * are required; a
             column can only feed one field. Date fields list only columns that
             look like dates, amount fields only columns that look like amounts
@@ -448,17 +460,16 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
               : ""}
             .
           </p>
-          <div className="mappings">
+          <div className="flex flex-wrap gap-4">
             {visibleFields.map((field) => (
               <label key={field} className="field">
                 <span
-                  className={
-                    REQUIRED_FIELDS.includes(field) ? "required" : undefined
-                  }
+                  className={`label ${REQUIRED_FIELDS.includes(field) ? "after:content-['*']" : ""}`}
                 >
                   {FIELD_LABELS[field]}
                 </span>
                 <select
+                  className="select"
                   value={mapping[field] ?? ""}
                   onChange={(e) =>
                     assign(
@@ -482,9 +493,12 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
             ))}
           </div>
 
-          <h3>Transaction preview</h3>
-          <div className="preview-scroll">
-            <table className="preview" aria-label="Transaction preview">
+          <h3 className="text-lg font-semibold">Transaction preview</h3>
+          <div className="overflow-x-auto">
+            <table
+              className="table table-xs table-zebra"
+              aria-label="Transaction preview"
+            >
               <thead>
                 <tr>
                   <th>Date</th>
@@ -522,8 +536,12 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
                       <td>
                         {mapping.date === undefined ? null : (
                           <>
-                            <span className="raw">{rawDate || "Empty"} →</span>{" "}
-                            <span className={date ? "parsed" : "invalid"}>
+                            <span className="opacity-70">
+                              {rawDate || "Empty"} →
+                            </span>{" "}
+                            <span
+                              className={date ? "text-success" : "text-error"}
+                            >
                               {date ?? "Invalid"}
                             </span>
                           </>
@@ -545,8 +563,8 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
                           <td
                             className={
                               mapping.amount !== undefined && amount === null
-                                ? "invalid"
-                                : ""
+                                ? "text-error"
+                                : undefined
                             }
                           >
                             {mapping.amount === undefined
@@ -567,22 +585,30 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
       ) : null}
 
       {!valid ? (
-        <ul className="missing" aria-label="Missing information">
+        <ul
+          className="list-inside list-disc text-sm text-error"
+          aria-label="Missing information"
+        >
           {errors.map((e) => (
             <li key={e}>{e}</li>
           ))}
         </ul>
       ) : null}
-      {saveError ? <div className="crawler-error">{saveError}</div> : null}
-      <div className="actions">
+      {saveError ? (
+        <div role="alert" className="alert alert-error">
+          {saveError}
+        </div>
+      ) : null}
+      <div className="flex gap-2">
         <button
           type="button"
+          className="btn btn-primary"
           disabled={!valid}
           onClick={() => void handleSave()}
         >
           Save source
         </button>
-        <button type="button" onClick={onCancel}>
+        <button type="button" className="btn" onClick={onCancel}>
           Cancel
         </button>
       </div>

@@ -31,26 +31,39 @@ export function SourcesTab() {
 
   return (
     <section aria-label="Sources">
-      <button type="button" onClick={() => setCreating(true)}>
+      <button
+        type="button"
+        className="btn btn-primary"
+        onClick={() => setCreating(true)}
+      >
         New source
       </button>
       {types.length === 0 ? (
-        <p>No sources yet. Create one to start importing statements.</p>
+        <p className="mt-4 opacity-70">
+          No sources yet. Create one to start importing statements.
+        </p>
       ) : (
-        <ul className="crawler-list">
+        <ul className="list mt-4 rounded-box bg-base-100 shadow-md">
           {types.map((t) => (
-            <li key={t.id} className="crawler-row">
-              <div className="crawler-info">
-                <div className="crawler-name">{t.name}</div>
-                <div className="crawler-description">
+            <li key={t.id} className="list-row items-center">
+              <div className="list-col-grow">
+                <div className="font-semibold">{t.name}</div>
+                <div className="badge badge-ghost badge-sm">
                   {t.format.toUpperCase()}
                 </div>
               </div>
               {confirmingId === t.id ? (
-                <div role="alertdialog" aria-label={`Confirm delete ${t.name}`}>
-                  <span>Delete "{t.name}"? This cannot be undone.</span>
+                <div
+                  role="alertdialog"
+                  aria-label={`Confirm delete ${t.name}`}
+                  className="flex items-center gap-2"
+                >
+                  <span className="text-error">
+                    Delete "{t.name}"? This cannot be undone.
+                  </span>
                   <button
                     type="button"
+                    className="btn btn-error btn-sm"
                     onClick={() =>
                       deleteSource(t.id).then(() => {
                         setConfirmingId(null);
@@ -60,13 +73,18 @@ export function SourcesTab() {
                   >
                     Confirm delete
                   </button>
-                  <button type="button" onClick={() => setConfirmingId(null)}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setConfirmingId(null)}
+                  >
                     Cancel
                   </button>
                 </div>
               ) : (
                 <button
                   type="button"
+                  className="btn btn-ghost btn-sm text-error"
                   aria-label={`Delete ${t.name}`}
                   onClick={() => setConfirmingId(t.id)}
                 >

@@ -71,59 +71,71 @@ export function ActualSettingsPage() {
 
   return (
     <form
-      className="wizard"
+      className="flex max-w-md flex-col gap-3"
       aria-label="Actual settings"
       onSubmit={onSubmit}
       noValidate
     >
-      <label className="field">
-        <span className="required">Server URL</span>
+      <label className="fieldset">
+        <span className="label after:content-['*']">Server URL</span>
         <input
           type="text"
+          className="input w-full"
           value={serverUrl}
           onChange={(e) => setServerUrl(e.target.value)}
         />
         {errors.serverUrl ? (
-          <p className="missing">{errors.serverUrl}</p>
+          <p className="text-sm text-error">{errors.serverUrl}</p>
         ) : null}
       </label>
-      <label className="field">
-        <span className="required">Server password</span>
+      <label className="fieldset">
+        <span className="label after:content-['*']">Server password</span>
         <input
           type="password"
+          className="input w-full"
           autoComplete="off"
           value={serverPassword}
           placeholder={saved?.hasServerPassword ? "•••••••• (saved)" : ""}
           onChange={(e) => setServerPassword(e.target.value)}
         />
         {errors.serverPassword ? (
-          <p className="missing">{errors.serverPassword}</p>
+          <p className="text-sm text-error">{errors.serverPassword}</p>
         ) : null}
       </label>
-      <label className="field">
-        <span className="required">Sync ID</span>
+      <label className="fieldset">
+        <span className="label after:content-['*']">Sync ID</span>
         <input
           type="text"
+          className="input w-full"
           value={syncId}
           onChange={(e) => setSyncId(e.target.value)}
         />
-        {errors.syncId ? <p className="missing">{errors.syncId}</p> : null}
+        {errors.syncId ? (
+          <p className="text-sm text-error">{errors.syncId}</p>
+        ) : null}
       </label>
-      <label className="field">
-        <span>Encryption password (optional)</span>
+      <label className="fieldset">
+        <span className="label">Encryption password (optional)</span>
         <input
           type="password"
+          className="input w-full"
           autoComplete="off"
           value={encryptionPassword}
           placeholder={saved?.hasEncryptionPassword ? "•••••••• (saved)" : ""}
           onChange={(e) => setEncryptionPassword(e.target.value)}
         />
       </label>
-      {errors.form ? <p className="missing">{errors.form}</p> : null}
-      <div className="actions">
-        <button type="submit">Save</button>
+      {errors.form ? <p className="text-sm text-error">{errors.form}</p> : null}
+      <div>
+        <button type="submit" className="btn btn-primary">
+          Save
+        </button>
       </div>
-      {confirmation ? <p role="status">Settings saved.</p> : null}
+      {confirmation ? (
+        <div role="status" className="alert alert-success">
+          Settings saved.
+        </div>
+      ) : null}
     </form>
   );
 }

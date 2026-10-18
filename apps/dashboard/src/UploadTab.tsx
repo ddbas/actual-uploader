@@ -75,11 +75,11 @@ export function UploadTab() {
   if (uploaded !== null) {
     return (
       <section aria-label="Upload">
-        <p role="status">
+        <div role="status" className="alert alert-success mb-4">
           Uploaded {uploaded} transaction{uploaded === 1 ? "" : "s"} to Actual
           Budget.
-        </p>
-        <button type="button" onClick={reset}>
+        </div>
+        <button type="button" className="btn" onClick={reset}>
           Upload more
         </button>
       </section>
@@ -90,10 +90,14 @@ export function UploadTab() {
     const errorCount = results.reduce((n, r) => n + r.errors.length, 0);
     return (
       <section aria-label="Upload">
-        <h2>Review transactions</h2>
+        <h2 className="mb-4 text-xl font-semibold">Review transactions</h2>
         {results.map((r) =>
           r.errors.length > 0 ? (
-            <div key={r.fileName} className="crawler-error" role="alert">
+            <div
+              key={r.fileName}
+              className="alert alert-error mb-4"
+              role="alert"
+            >
               {r.fileName}: {r.errors.length} row
               {r.errors.length === 1 ? "" : "s"} skipped (
               {r.errors.map((x) => `row ${x.row}: ${x.message}`).join("; ")})
@@ -101,46 +105,54 @@ export function UploadTab() {
           ) : null,
         )}
         {transactions.length === 0 ? (
-          <p>No transactions found.</p>
+          <p className="opacity-70">No transactions found.</p>
         ) : (
-          <table aria-label="Parsed transactions">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Payee</th>
-                <th>Notes</th>
-                <th>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((t, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: static list
-                <tr key={i}>
-                  <td>{t.date}</td>
-                  <td>{t.payee_name ?? "—"}</td>
-                  <td>{t.notes ?? "—"}</td>
-                  <td>{formatAmount(t.amount)}</td>
+          <div className="overflow-x-auto">
+            <table
+              className="table table-zebra"
+              aria-label="Parsed transactions"
+            >
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Payee</th>
+                  <th>Notes</th>
+                  <th>Amount</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {transactions.map((t, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static list
+                  <tr key={i}>
+                    <td>{t.date}</td>
+                    <td>{t.payee_name ?? "—"}</td>
+                    <td>{t.notes ?? "—"}</td>
+                    <td>{formatAmount(t.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-        <p>
+        <p className="my-4">
           {transactions.length} transaction
           {transactions.length === 1 ? "" : "s"}
           {errorCount > 0 ? `, ${errorCount} skipped` : ""}.
         </p>
-        <button type="button" onClick={reset}>
-          Back
-        </button>{" "}
-        <button
-          type="button"
-          disabled={transactions.length === 0}
-          // Actual Budget upload is not implemented yet; confirm only.
-          onClick={() => setUploaded(transactions.length)}
-        >
-          Upload to Actual
-        </button>
+        <div className="flex gap-2">
+          <button type="button" className="btn" onClick={reset}>
+            Back
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={transactions.length === 0}
+            // Actual Budget upload is not implemented yet; confirm only.
+            onClick={() => setUploaded(transactions.length)}
+          >
+            Upload to Actual
+          </button>
+        </div>
       </section>
     );
   }
@@ -148,54 +160,61 @@ export function UploadTab() {
   return (
     <section aria-label="Upload">
       {sources?.length === 0 ? (
-        <p>No sources yet. Create one in the Sources tab first.</p>
+        <div role="status" className="alert alert-info">
+          No sources yet. Create one in the Sources tab first.
+        </div>
       ) : (
-        <form onSubmit={onProcess}>
-          <p>
-            <label>
-              Source{" "}
-              <select
-                value={sourceId}
-                onChange={(e) => setSourceId(e.target.value)}
-              >
-                <option value="">Choose a source…</option>
-                {sources?.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </p>
-          <p>
-            <label>
-              Account{" "}
-              <select
-                value={account}
-                onChange={(e) => setAccount(e.target.value)}
-              >
-                <option value="">Choose an account…</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </p>
-          <p>
-            <label>
-              Statement files{" "}
-              <input
-                type="file"
-                multiple
-                accept=".csv,text/csv"
-                onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-              />
-            </label>
-          </p>
-          {error ? <div className="crawler-error">{error}</div> : null}
-          <button type="submit" disabled={!canProcess}>
+        <form onSubmit={onProcess} className="flex max-w-md flex-col gap-3">
+          <label className="fieldset">
+            <span className="label">Source</span>
+            <select
+              className="select w-full"
+              value={sourceId}
+              onChange={(e) => setSourceId(e.target.value)}
+            >
+              <option value="">Choose a source…</option>
+              {sources?.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="fieldset">
+            <span className="label">Account</span>
+            <select
+              className="select w-full"
+              value={account}
+              onChange={(e) => setAccount(e.target.value)}
+            >
+              <option value="">Choose an account…</option>
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="fieldset">
+            <span className="label">Statement files</span>
+            <input
+              type="file"
+              className="file-input w-full"
+              multiple
+              accept=".csv,text/csv"
+              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+            />
+          </label>
+          {error ? (
+            <div role="alert" className="alert alert-error">
+              {error}
+            </div>
+          ) : null}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={!canProcess}
+          >
             {processing ? "Processing…" : "Process files"}
           </button>
         </form>
