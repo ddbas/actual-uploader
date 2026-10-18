@@ -11,3 +11,6 @@ coverage/
 # Playwright
 test-results/
 playwright-report/
+
+# MacOS
+.DS_Store
