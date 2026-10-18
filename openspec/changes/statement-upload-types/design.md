@@ -27,3 +27,8 @@
 - **Persistence** is a JSON file in a data directory
   (`ACCOUNT_CRAWLER_DATA_DIR`, default `~/.account-crawler`). Simple, local,
   inspectable; swappable for a database later.
+- **Guessing is heuristic and conservative.** Header patterns win; otherwise
+  value shapes decide. Payee is the unassigned text column with the highest
+  variety x length (so account numbers and repeating status columns lose).
+  Amount prefers columns with cents over integer-only columns. Notes are not
+  guessed from values, since a wrong guess is worse than leaving it blank.

@@ -4,7 +4,8 @@
 - [x] 1.2 Upload type model, validation, row mapping (date, amount parsing)
 - [x] 1.3 Flexible date parsing and multi-row date format detection
 - [x] 1.4 Amount layouts (single, split, in/out), flip, skipped lines
-- [x] 1.5 Mapping guess and column analysis
+- [x] 1.5 Mapping guess (including value-based payee and amount detection) and
+      column analysis
 - [x] 1.6 Unit tests
 
 ## 2. Server

@@ -15,11 +15,12 @@ tool must let users teach it how to read each kind of statement.
   (date, payee, notes, source id, and amounts). Amounts may be a single signed
   column, separate outflow/inflow columns, or an amount column plus an in/out
   column; amounts can be flipped; lines can be skipped at the start and end of
-  the file. Date format is detected across all sample rows, columns that cannot
-  supply a field (empty, or not date/amount-like) are not offered, and columns
-  are named by header plus a sample value. A preview table shows the parsed
-  transactions. An upload type can only be saved once every required field has a
-  source.
+  the file. Payee and amount columns are detected from values when headers don't
+  say (e.g. merchant-like text, amounts with cents). Date format is detected
+  across all sample rows, columns that cannot supply a field (empty, or not
+  date/amount-like) are not offered, and columns are named by header plus a
+  sample value. A preview table shows the parsed transactions. An upload type
+  can only be saved once every required field has a source.
 - Persist saved upload types on the local server.
 - Add a server endpoint that processes a CSV statement with a saved upload type
   into `Transaction` objects (the existing Actual Budget-shaped type).

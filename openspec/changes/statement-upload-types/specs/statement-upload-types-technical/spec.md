@@ -71,12 +71,41 @@ report row numbers relative to the original file.
 ### Requirement: Column Analysis and Date Format Detection
 
 `statement-core` SHALL provide column analysis (whether a column has values,
-looks like dates, looks like amounts, and a sample value) and date format
-detection over many samples, tolerating a small share of non-matching rows, and
-returning all equally-fitting formats so ambiguity can be reported. Amount
-detection SHALL NOT treat dates as amounts.
+looks like dates, looks like amounts, a sample value, the share of values that
+end in cents, the share containing letters, the variety of distinct values, and
+average value length) and date format detection over many samples, tolerating a
+small share of non-matching rows, and returning all equally-fitting formats so
+ambiguity can be reported. Amount detection SHALL NOT treat dates as amounts.
 
 #### Scenario: Footer row tolerated
 
 - **WHEN** a date column has valid dates in most rows and "Total" in the last
 - **THEN** the date format is still detected
+
+### Requirement: Mapping Guess Heuristics
+
+`statement-core` SHALL provide a mapping guess that, from header names and
+column analysis, assigns each column at most once and returns the field
+assignments, amount layout, date format, and decimal separator. When headers do
+not identify a field it SHALL fall back to value-based rules: the first
+date-like column for the date; an amount-like, non-date column for the amount,
+preferring columns whose values have cents; and, for the payee, the unassigned
+column that is mostly letters and scores highest on variety times average length
+(capped), excluding date-like and amount-like columns.
+
+#### Scenario: Payee chosen by value shape
+
+- **WHEN** a headerless file has an account-number column, a repeating
+  "Debit"/"Credit" column, and a merchant-name column
+- **THEN** only the merchant-name column is assigned to payee
+
+#### Scenario: Account numbers are not amounts
+
+- **WHEN** a headerless file has an integer-only column and a column of values
+  with cents
+- **THEN** the column with cents is assigned to amount
+
+#### Scenario: No payee candidate
+
+- **WHEN** no unassigned column is mostly letters
+- **THEN** payee is left unassigned
