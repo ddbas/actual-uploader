@@ -14,11 +14,18 @@ The server SHALL persist sources to a JSON file in a data directory
 
 The server SHALL expose `GET /api/sources`, `POST /api/sources`, and
 `DELETE /api/sources/:id`. `POST` SHALL reject (HTTP 400, with error messages)
-any source lacking a name or a column mapping for a required field.
+any source lacking a name or a column mapping for a required field, or that
+assigns the same column to more than one field. Validation SHALL live in
+`statement-core` so the dashboard and server apply identical rules.
 
 #### Scenario: Invalid source rejected
 
 - **WHEN** a POST omits the amount source
+- **THEN** the server responds 400 and does not store it
+
+#### Scenario: Duplicate column rejected
+
+- **WHEN** a POST assigns one column to two fields (e.g. date and payee)
 - **THEN** the server responds 400 and does not store it
 
 ### Requirement: Statement Processing Endpoint

@@ -75,9 +75,10 @@ assigning a source column to each transaction field.
 
 #### Scenario: Each column feeds at most one field
 
-- **WHEN** a column is selected for one field
-- **THEN** that column is no longer offered in the selects of the other fields,
-  until it is deselected
+- **WHEN** the same column is selected for more than one field
+- **THEN** the form indicates which fields share the column and the save action
+  is disabled until each column is used by at most one field; columns already
+  selected for another field remain offered in every select
 
 #### Scenario: Preview columns are the fields
 

@@ -104,7 +104,33 @@ export function validateSource(input: unknown): string[] {
       errors.push(`${key} must be a column index`);
     }
   }
+  errors.push(...duplicateColumnErrors(t));
   return errors;
+}
+
+/** Reports every column that has been assigned to more than one field. */
+function duplicateColumnErrors(t: Partial<CsvSource>): string[] {
+  const a = t.amount;
+  const uses: Array<[string, unknown]> = [
+    ["Date", t.dateColumn],
+    ["Payee", t.payeeColumn],
+    ["Notes", t.notesColumn],
+    ["Source id", t.importedIdColumn],
+  ];
+  if (a?.kind === "single") uses.push(["Amount", a.column]);
+  else if (a?.kind === "split") {
+    uses.push(["Outflow", a.debitColumn], ["Inflow", a.creditColumn]);
+  } else if (a?.kind === "inOut") {
+    uses.push(["Amount", a.column], ["In/Out", a.inOutColumn]);
+  }
+  const byColumn = new Map<number, string[]>();
+  for (const [label, column] of uses) {
+    if (!isIndex(column)) continue;
+    byColumn.set(column, [...(byColumn.get(column) ?? []), label]);
+  }
+  return [...byColumn.values()]
+    .filter((labels) => labels.length > 1)
+    .map((labels) => `${labels.join(" and ")} cannot use the same column`);
 }
 
 const MONTHS: Array<[RegExp, string]> = [

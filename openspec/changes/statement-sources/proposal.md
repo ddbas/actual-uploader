@@ -19,11 +19,15 @@ tool must let users teach it how to read each kind of statement.
   say (e.g. merchant-like text, amounts with cents). Date format is detected
   across all sample rows, columns that cannot supply a field (empty, or not
   date/amount-like) are not offered, and columns are named by header plus a
-  sample value. A preview table shows the parsed transactions. A source can only
-  be saved once every required field is mapped to a column.
+  sample value. A column selected for one field remains offered for the others,
+  but a source cannot be saved while the same column is assigned to more than
+  one field. A preview table shows the parsed transactions. A source can only be
+  saved once every required field is mapped to a column.
+- Deleting a source requires explicit confirmation from the user.
 - Persist saved sources on the local server.
 - Add a server endpoint that processes a CSV statement with a saved source into
-  `Transaction` objects (the existing Actual Budget-shaped type).
+  `Transaction` objects (the existing Actual Budget-shaped type). The account is
+  supplied when processing, not stored on the source.
 - CSV is the only supported file format for now; the model is extensible to PDF.
 
 ## Non-Goals

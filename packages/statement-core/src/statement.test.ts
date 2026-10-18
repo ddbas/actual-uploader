@@ -68,6 +68,17 @@ describe("parsers", () => {
 });
 
 describe("validateSource", () => {
+  it("rejects a column assigned to more than one field", () => {
+    expect(validateSource({ ...base, payeeColumn: 0 })).toEqual([
+      "Date and Payee cannot use the same column",
+    ]);
+    expect(
+      validateSource({
+        ...base,
+        amount: { kind: "inOut", column: 2, inOutColumn: 2, outValue: "D" },
+      }),
+    ).toEqual(["Amount and In/Out cannot use the same column"]);
+  });
   it("accepts a complete type", () => {
     expect(validateSource(base)).toEqual([]);
   });

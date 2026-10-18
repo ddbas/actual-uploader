@@ -123,17 +123,17 @@ describe("SourcesTab", () => {
     expect(within(preview()).getByText("-4.50")).toBeTruthy();
     expect(within(preview()).getByText("100.00")).toBeTruthy();
 
-    // A column already used by another field is not offered.
-    expect(optionsOf("Notes")).not.toContain("Description");
-    expect(optionsOf("Notes")).not.toContain("Date");
-    expect(optionsOf("Notes")).not.toContain("Debit");
-
-    // Freeing a field makes its column available again.
-    await user.selectOptions(field("Payee"), "");
+    // A column already used by another field is still offered, but the
+    // same column cannot be saved twice.
     expect(optionsOf("Notes")).toContain("Description");
-    expect(within(preview()).queryByText("Coffee")).toBeNull();
-
     await user.selectOptions(field("Notes"), "1");
+    expect(
+      screen.getByText("Payee and Notes cannot use the same column"),
+    ).toBeTruthy();
+    expect((save as HTMLButtonElement).disabled).toBe(true);
+
+    await user.selectOptions(field("Payee"), "");
+    expect(screen.queryByText(/cannot use the same column/)).toBeNull();
     expect(within(preview()).getByText("Coffee")).toBeTruthy();
     expect((save as HTMLButtonElement).disabled).toBe(false);
     await user.click(save);
@@ -190,7 +190,12 @@ describe("SourcesTab", () => {
     // text columns can't be a date or an amount; empty columns are never offered
     expect(optionsOf("Date")).toEqual(["Choose field…", "Date"]);
     expect(optionsOf("Amount")).toEqual(["Choose field…", "Amount"]);
-    expect(optionsOf("Notes")).toEqual(["Choose field…"]);
+    expect(optionsOf("Notes")).toEqual([
+      "Choose field…",
+      "Date",
+      "Payee",
+      "Amount",
+    ]);
     expect(screen.getByText(/1 empty column is hidden/)).toBeTruthy();
   });
 

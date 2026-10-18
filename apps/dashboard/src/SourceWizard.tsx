@@ -471,12 +471,7 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
                 >
                   <option value="">Choose field…</option>
                   {Array.from({ length: columnCount }, (_, i) => i)
-                    .filter(
-                      (i) =>
-                        mapping[field] === i ||
-                        (fits(field, i) &&
-                          !visibleFields.some((f) => mapping[f] === i)),
-                    )
+                    .filter((i) => mapping[field] === i || fits(field, i))
                     .map((i) => (
                       <option key={i} value={i}>
                         {optionLabel(i)}

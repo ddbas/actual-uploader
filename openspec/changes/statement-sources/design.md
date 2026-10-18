@@ -16,9 +16,11 @@
   independent of separator, and are normalized to `YYYY-MM-DD`. Format detection
   scans all sample rows and reports ambiguity.
 - **Mapping UI** follows Actual: one select per field choosing a column (each
-  column feeds one field), separate from a preview table whose columns are the
-  fields. Mappings are guessed from headers and value shapes, and selects list
-  only columns that can plausibly supply the field.
+  column may feed only one field, enforced by validation rather than by hiding
+  options, so selects never change under the user), separate from a preview
+  table whose columns are the fields. Mappings are guessed from headers and
+  value shapes, and selects list only columns that can plausibly supply the
+  field.
 - **Skipped lines** (`skipStartLines`/`skipEndLines`) apply before the header
   row; row numbers in errors refer to the original file.
 - **Known limitation:** files are read as UTF-8; other encodings (as Actual
