@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import "crawlers";
 import { getCrawlers } from "crawler-core";
 import open from "open";
+import { ActualSettingsStore } from "./actualSettingsStore.js";
 import { createServer } from "./server.js";
 import { SourceStore } from "./sourceStore.js";
 
@@ -18,6 +19,9 @@ async function main() {
   const { server } = createServer({
     crawlers: getCrawlers(),
     sources: new SourceStore(join(dataDir, "sources.json")),
+    actualSettings: new ActualSettingsStore(
+      join(dataDir, "actual-settings.json"),
+    ),
     staticDir: existsSync(staticDir) ? staticDir : undefined,
   });
 

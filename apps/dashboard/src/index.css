@@ -180,3 +180,30 @@ td {
 .required::after {
   content: " *";
 }
+.settings {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 8rem;
+}
+.settings-nav button {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+.settings-nav button[aria-current="page"] {
+  border-left-color: currentColor;
+  font-weight: 600;
+}
+.settings-page {
+  flex: 1;
+}

@@ -3,6 +3,7 @@ import { createServer as createHttpServer, type Server } from "node:http";
 import { extname, join } from "node:path";
 import type { Crawler } from "crawler-core";
 import { processCsv, type SourceDraft, validateSource } from "statement-core";
+import { ActualSettingsStore } from "./actualSettingsStore.js";
 import { CrawlerRunner, type RunnerEvent } from "./runner.js";
 import { SourceStore } from "./sourceStore.js";
 
@@ -23,6 +24,8 @@ export interface CreateServerOptions {
   staticDir?: string;
   /** Source storage. Defaults to a non-persistent in-memory store. */
   sources?: SourceStore;
+  /** Actual settings storage. Defaults to a non-persistent in-memory store. */
+  actualSettings?: ActualSettingsStore;
 }
 
 export interface AccountCrawlerServer {
@@ -85,6 +88,7 @@ export function createServer(
 ): AccountCrawlerServer {
   const runner = new CrawlerRunner(options.crawlers);
   const sources = options.sources ?? new SourceStore();
+  const actualSettings = options.actualSettings ?? new ActualSettingsStore();
   const sseClients = new Set<import("node:http").ServerResponse>();
 
   const broadcast = (event: RunnerEvent): void => {
@@ -100,6 +104,13 @@ export function createServer(
 
     if (url.pathname.startsWith("/api/sources")) {
       handleSources(req, res, url.pathname, sources).catch(() => {
+        sendJson(res, 500, { error: "Internal error" });
+      });
+      return;
+    }
+
+    if (url.pathname === "/api/settings/actual") {
+      handleActualSettings(req, res, actualSettings).catch(() => {
         sendJson(res, 500, { error: "Internal error" });
       });
       return;
@@ -235,4 +246,32 @@ async function handleSources(
     }
   }
   sendJson(res, 404, { error: "Not found" });
+}
+
+async function handleActualSettings(
+  req: import("node:http").IncomingMessage,
+  res: import("node:http").ServerResponse,
+  store: ActualSettingsStore,
+): Promise<void> {
+  if (req.method === "GET") {
+    sendJson(res, 200, store.get());
+    return;
+  }
+  if (req.method === "PUT") {
+    let body: unknown;
+    try {
+      body = JSON.parse(await readBody(req));
+    } catch {
+      sendJson(res, 400, { errors: { body: "Body must be valid JSON" } });
+      return;
+    }
+    const errors = store.update(body);
+    if (Object.keys(errors).length > 0) {
+      sendJson(res, 400, { errors });
+      return;
+    }
+    sendJson(res, 200, store.get());
+    return;
+  }
+  sendJson(res, 405, { error: "Method not allowed" });
 }

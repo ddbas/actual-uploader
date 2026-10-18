@@ -178,4 +178,13 @@ describe("App", () => {
     expect(await screen.findByText("Store A")).toBeInTheDocument();
     expect(await screen.findByText("Store B")).toBeInTheDocument();
   });
+
+  it("has a Settings tab and no top-level Sources tab", async () => {
+    render(<App />);
+    await screen.findByText("Desjardins (Mock)");
+    expect(screen.getByRole("tab", { name: "Settings" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("tab", { name: "Sources" }),
+    ).not.toBeInTheDocument();
+  });
 });
