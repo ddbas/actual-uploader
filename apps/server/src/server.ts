@@ -1,9 +1,7 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer as createHttpServer, type Server } from "node:http";
 import { extname, join } from "node:path";
-import type { Crawler } from "crawler-core";
 import { processCsv, type SourceDraft, validateSource } from "statement-core";
-import { CrawlerRunner, type RunnerEvent } from "./runner.js";
 import { SourceStore } from "./sourceStore.js";
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -17,8 +15,6 @@ const CONTENT_TYPES: Record<string, string> = {
 };
 
 export interface CreateServerOptions {
-  /** Crawlers available to run. Defaults to the registered crawler registry. */
-  crawlers: Iterable<Crawler>;
   /** Directory containing the built dashboard's static assets, if any. */
   staticDir?: string;
   /** Source storage. Defaults to a non-persistent in-memory store. */
@@ -27,7 +23,6 @@ export interface CreateServerOptions {
 
 export interface AccountCrawlerServer {
   server: Server;
-  runner: CrawlerRunner;
 }
 
 function sendJson(
@@ -76,24 +71,13 @@ function serveStatic(
 }
 
 /**
- * Creates the local HTTP server: a small REST API to list/run crawlers, an
- * SSE endpoint streaming crawler lifecycle/transaction events, and (in
- * production) static hosting of the built dashboard.
+ * Creates the local HTTP server: a small REST API for sources and statement
+ * processing, and (in production) static hosting of the built dashboard.
  */
 export function createServer(
   options: CreateServerOptions,
 ): AccountCrawlerServer {
-  const runner = new CrawlerRunner(options.crawlers);
   const sources = options.sources ?? new SourceStore();
-  const sseClients = new Set<import("node:http").ServerResponse>();
-
-  const broadcast = (event: RunnerEvent): void => {
-    const payload = `data: ${JSON.stringify(event)}\n\n`;
-    for (const client of sseClients) {
-      client.write(payload);
-    }
-  };
-  runner.on("event", broadcast);
 
   const server = createHttpServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
@@ -102,46 +86,6 @@ export function createServer(
       handleSources(req, res, url.pathname, sources).catch(() => {
         sendJson(res, 500, { error: "Internal error" });
       });
-      return;
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/crawlers") {
-      sendJson(res, 200, runner.listCrawlers());
-      return;
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/events") {
-      res.writeHead(200, {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      });
-      res.write(
-        `data: ${JSON.stringify({ type: "state-snapshot", states: runner.getStates() })}\n\n`,
-      );
-      sseClients.add(res);
-      req.on("close", () => {
-        sseClients.delete(res);
-      });
-      return;
-    }
-
-    const runOneMatch = url.pathname.match(/^\/api\/crawlers\/([^/]+)\/run$/);
-    if (req.method === "POST" && runOneMatch) {
-      const id = decodeURIComponent(runOneMatch[1] ?? "");
-      if (!runner.hasCrawler(id)) {
-        sendJson(res, 404, { error: `No crawler registered with id "${id}"` });
-        return;
-      }
-      // Fire-and-forget: progress/results are delivered over SSE.
-      void runner.runOne(id);
-      sendJson(res, 202, { started: id });
-      return;
-    }
-
-    if (req.method === "POST" && url.pathname === "/api/run-all") {
-      void runner.runAll();
-      sendJson(res, 202, { started: "all" });
       return;
     }
 
@@ -154,15 +98,7 @@ export function createServer(
     sendJson(res, 404, { error: "Not found" });
   });
 
-  server.on("close", () => {
-    runner.off("event", broadcast);
-    for (const client of sseClients) {
-      client.end();
-    }
-    sseClients.clear();
-  });
-
-  return { server, runner };
+  return { server };
 }
 
 async function handleSources(

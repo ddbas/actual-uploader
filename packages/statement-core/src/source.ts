@@ -1,5 +1,5 @@
-import type { Transaction } from "crawler-core";
 import { parseCsv } from "./csv.js";
+import type { Transaction } from "./transaction.js";
 
 /** Field order and year width; the separator in the file doesn't matter. */
 export const DATE_FORMATS = [

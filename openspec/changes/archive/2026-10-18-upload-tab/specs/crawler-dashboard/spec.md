@@ -31,28 +31,40 @@ message that the transactions were uploaded.
 - **WHEN** the user clicks "Upload to Actual" on the review step
 - **THEN** a message confirms how many transactions were uploaded
 
-## MODIFIED Requirements
+## REMOVED Requirements
 
 ### Requirement: Home Tab Lists Crawlers With Run Controls
 
-The dashboard SHALL present a "Crawlers" tab listing every registered crawler
-with its name, description, and a "Run" button, plus a single "Run All" button
-positioned above the list of crawlers.
+**Reason**: Web crawlers are no longer used to collect transaction data.
 
-#### Scenario: Home tab is the initial view
+**Migration**: None; transactions now come from uploaded statement files.
 
-- **WHEN** the dashboard first loads in the browser
-- **THEN** the "Upload" tab is shown and selected by default (the former "Home"
-  tab is now "Crawlers")
+### Requirement: Running an Individual Crawler
 
-#### Scenario: Home tab lists all registered crawlers
+**Reason**: Web crawlers are no longer used to collect transaction data.
 
-- **WHEN** the "Crawlers" tab is displayed
-- **THEN** every registered crawler is listed with its name, description, and a
-  "Run" button, and a "Run All" button is shown above the list
+**Migration**: None; transactions now come from uploaded statement files.
 
-#### Scenario: Crawlers tab lists all registered crawlers
+### Requirement: Running All Crawlers in Series
 
-- **WHEN** the "Crawlers" tab is displayed
-- **THEN** every registered crawler is listed with its name, description, and a
-  "Run" button, and a "Run All" button is shown above the list
+**Reason**: Web crawlers are no longer used to collect transaction data.
+
+**Migration**: None; transactions now come from uploaded statement files.
+
+### Requirement: Per-Crawler Progress Indicator
+
+**Reason**: Web crawlers are no longer used to collect transaction data.
+
+**Migration**: None; transactions now come from uploaded statement files.
+
+### Requirement: Results Tab Appears After a Run Completes
+
+**Reason**: Web crawlers are no longer used to collect transaction data.
+
+**Migration**: None; transactions now come from uploaded statement files.
+
+### Requirement: Results Tab Aggregates Transactions Across Runs
+
+**Reason**: Web crawlers are no longer used to collect transaction data.
+
+**Migration**: None; transactions now come from uploaded statement files.

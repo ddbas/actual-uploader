@@ -15,8 +15,6 @@
     "start": "node dist/bin.js"
   },
   "dependencies": {
-    "crawler-core": "workspace:*",
-    "crawlers": "workspace:*",
     "open": "^11.0.0",
     "statement-core": "workspace:*"
   },

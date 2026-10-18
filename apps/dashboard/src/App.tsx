@@ -1,24 +1,11 @@
-import { useEffect, useState } from "react";
-import { fetchCrawlers, runAllCrawlers, runCrawler } from "./api.js";
-import { HomeTab } from "./HomeTab.js";
-import { ResultsTab } from "./ResultsTab.js";
+import { useState } from "react";
 import { SourcesTab } from "./SourcesTab.js";
-import type { CrawlerSummary } from "./serverTypes.js";
 import { UploadTab } from "./UploadTab.js";
-import { useCrawlerEvents } from "./useCrawlerEvents.js";
 
-type Tab = "upload" | "home" | "results" | "sources";
+type Tab = "upload" | "sources";
 
 export function App() {
-  const [crawlers, setCrawlers] = useState<CrawlerSummary[]>([]);
   const [tab, setTab] = useState<Tab>("upload");
-  const { states, errors, results, hasAnyCompleted } = useCrawlerEvents();
-
-  useEffect(() => {
-    fetchCrawlers()
-      .then(setCrawlers)
-      .catch(() => setCrawlers([]));
-  }, []);
 
   return (
     <div className="app">
@@ -34,45 +21,13 @@ export function App() {
         <button
           type="button"
           role="tab"
-          aria-selected={tab === "home"}
-          onClick={() => setTab("home")}
-        >
-          Crawlers
-        </button>
-        <button
-          type="button"
-          role="tab"
           aria-selected={tab === "sources"}
           onClick={() => setTab("sources")}
         >
           Sources
         </button>
-        {hasAnyCompleted ? (
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "results"}
-            onClick={() => setTab("results")}
-          >
-            Results
-          </button>
-        ) : null}
       </div>
-      {tab === "upload" ? (
-        <UploadTab />
-      ) : tab === "sources" ? (
-        <SourcesTab />
-      ) : tab === "home" || !hasAnyCompleted ? (
-        <HomeTab
-          crawlers={crawlers}
-          states={states}
-          errors={errors}
-          onRun={runCrawler}
-          onRunAll={runAllCrawlers}
-        />
-      ) : (
-        <ResultsTab results={results} />
-      )}
+      {tab === "upload" ? <UploadTab /> : <SourcesTab />}
     </div>
   );
 }

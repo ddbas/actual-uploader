@@ -1,7 +1,7 @@
 /**
- * Minimal `Transaction` shape mirrored from `crawler-core`, matching the
+ * Minimal `Transaction` shape mirrored from `statement-core`, matching the
  * Actual Budget API reference. Duplicated here (rather than depending on
- * `crawler-core` at runtime) to keep the browser bundle free of any
+ * `statement-core` at runtime) to keep the browser bundle free of any
  * server/Node-only code.
  */
 export interface Transaction {

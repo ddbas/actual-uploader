@@ -2,7 +2,7 @@
  * A financial transaction, modeled directly on the Actual Budget API
  * `Transaction` reference (https://actualbudget.org/docs/api/reference).
  *
- * Only `account` and `date` are required. Crawlers should populate as many of
+ * Only `account` and `date` are required. Sources should populate as many of
  * the remaining fields as they can so results can be imported into Actual
  * Budget without further transformation.
  */

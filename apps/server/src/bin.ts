@@ -3,8 +3,6 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import "crawlers";
-import { getCrawlers } from "crawler-core";
 import open from "open";
 import { createServer } from "./server.js";
 import { SourceStore } from "./sourceStore.js";
@@ -16,7 +14,6 @@ async function main() {
   const dataDir =
     process.env.ACCOUNT_CRAWLER_DATA_DIR ?? join(homedir(), ".account-crawler");
   const { server } = createServer({
-    crawlers: getCrawlers(),
     sources: new SourceStore(join(dataDir, "sources.json")),
     staticDir: existsSync(staticDir) ? staticDir : undefined,
   });

@@ -19,7 +19,7 @@ const valid = {
 
 const servers: ReturnType<typeof createServer>["server"][] = [];
 async function start(store?: SourceStore) {
-  const { server } = createServer({ crawlers: [], sources: store });
+  const { server } = createServer({ sources: store });
   servers.push(server);
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   return `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

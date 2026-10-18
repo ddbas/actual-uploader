@@ -1,5 +1,3 @@
-- Real crawler implementation (with manual human login step)
-- Crawl recording
 - Upload to Actual Budget
 - Store in database
 - Crawler configuration tab
