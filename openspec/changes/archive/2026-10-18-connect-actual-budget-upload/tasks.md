@@ -32,7 +32,7 @@
 
 ## 4. Wrap-up
 
-- [ ] 4.1 Manually verify against a real Actual server: indicator turns green,
+- [x] 4.1 Manually verify against a real Actual server: indicator turns green,
       accounts list, uploaded transactions appear in Actual
 - [x] 4.2 Update README/TODO.md (remove "Upload to Actual Budget") and run
       `mise run` lint, type-check, and test tasks to confirm all pass
