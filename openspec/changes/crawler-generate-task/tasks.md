@@ -1,0 +1,39 @@
+## 1. Spike
+
+- [ ] 1.1 Run `playwright codegen -o /tmp/rec.ts --target=javascript <url>`
+      manually, close the window, and confirm the file is complete and the
+      process exits; record the observed output shape as a test fixture
+
+## 2. Transformation
+
+- [ ] 2.1 Implement `sanitize()` that replaces sentinel statements with
+      `await page.pause();` and verify with unit tests on fixture recordings
+- [ ] 2.2 Add password-pattern redaction (English and French terms) with a
+      warning list, and verify with unit tests that no credential value remains
+      in the output
+- [ ] 2.3 Strip the wrapper/launch boilerplate so only page steps remain, and
+      verify with a unit test
+
+## 3. Generator Script
+
+- [ ] 3.1 Implement argument validation (name kebab-case, http(s) URL) and
+      verify each failure mode exits non-zero with usage without launching a
+      browser
+- [ ] 3.2 Spawn codegen with a temp output file, print instructions, read and
+      delete the file on exit, and verify with a manual run
+- [ ] 3.3 Implement the crawler template and write
+      `packages/crawlers/src/<name>.ts`, and verify the generated file passes
+      Biome and type checks
+- [ ] 3.4 Register the crawler in `packages/crawlers/src/index.ts` idempotently,
+      and verify the crawler appears in the registry and that regenerating an
+      existing name overwrites the file without duplicating the registration
+
+## 4. Wiring and Docs
+
+- [ ] 4.1 Add the `crawler:generate` task to `mise.toml` and verify it appears
+      in `mise tasks` and passes arguments through
+- [ ] 4.2 Document the workflow (sentinel, finishing a recording) in README.md
+      and fix the stale `mise run install`/`build` task names
+- [ ] 4.3 End-to-end: generate a crawler against a test page, run
+      `mise run pnpm:build`, and verify the build succeeds and no typed
+      credential appears in the repo
