@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import {
+  analyzeColumns,
   DATE_FORMATS,
   type DateFormat,
+  detectDateFormats,
   detectDelimiter,
   type FieldKey,
   guessMapping,
@@ -177,6 +179,11 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
 
   function assign(field: FieldKey, column: number | undefined) {
     setMapping((prev) => ({ ...prev, [field]: column }));
+    if (field === "date" && column !== undefined) {
+      // Re-detect the format from every sample in the newly chosen column.
+      const found = detectDateFormats(dataRows.map((r) => r[column] ?? ""));
+      if (found[0]) setDateFormat(found[0]);
+    }
   }
 
   function changeAmountKind(kind: AmountKind) {
@@ -213,11 +220,46 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
     ...AMOUNT_FIELDS[amountKind],
   ];
 
-  const sampleRow = dataRows[0] ?? [];
-  const optionLabel = (i: number) =>
-    header?.[i]?.trim()
-      ? (header[i] as string)
-      : `Column ${i + 1} (${(sampleRow[i] ?? "").trim()})`;
+  const columns = analyzeColumns(dataRows, columnCount);
+  const headerCounts = new Map<string, number>();
+  for (const h of header ?? []) {
+    const k = h.trim();
+    if (k) headerCounts.set(k, (headerCounts.get(k) ?? 0) + 1);
+  }
+
+  /**
+   * "Description: COFFEE SHOP" — the header (or "Column N") plus the first
+   * non-empty value, so columns are recognizable even with cryptic headers.
+   * Duplicate header names get their column number.
+   */
+  function optionLabel(i: number): string {
+    const h = header?.[i]?.trim() ?? "";
+    const base = !h
+      ? `Column ${i + 1}`
+      : (headerCounts.get(h) ?? 0) > 1
+        ? `${h} (column ${i + 1})`
+        : h;
+    const sample = columns[i]?.sample ?? "";
+    const short = sample.length > 24 ? `${sample.slice(0, 23)}…` : sample;
+    return short ? `${base}: ${short}` : base;
+  }
+
+  /** Whether a column could plausibly supply a field, based on its values. */
+  function fits(field: FieldKey, i: number): boolean {
+    const c = columns[i];
+    if (!c?.hasValues) return false;
+    if (field === "date") return c.looksLikeDate;
+    if (field === "amount" || field === "debit" || field === "credit") {
+      return c.looksLikeAmount;
+    }
+    return true;
+  }
+
+  const emptyColumns = columns.filter((c) => !c.hasValues).length;
+  const dateCandidates = detectDateFormats(
+    dateIndex === undefined ? [] : dataRows.map((r) => r[dateIndex] ?? ""),
+  );
+  const otherDateFormats = dateCandidates.filter((f) => f !== dateFormat);
 
   /** Outflow/inflow preview cell, derived from the final (flipped) amount. */
   function splitCell(
@@ -379,13 +421,32 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
                   ))}
                 </select>
               </label>
+              {otherDateFormats.length > 0 ? (
+                <p className="hint" role="note">
+                  The sample dates also fit{" "}
+                  {otherDateFormats
+                    .map((f) => f.replace(/ /g, dateSeparator))
+                    .join(", ")}
+                  . Check the preview.
+                </p>
+              ) : null}
+              {mapping.date !== undefined && dateCandidates.length === 0 ? (
+                <p className="hint invalid" role="note">
+                  No date format fits the sample dates.
+                </p>
+              ) : null}
             </fieldset>
           </div>
 
           <h3>Map fields to columns</h3>
           <p className="hint">
             Columns were guessed from the file. Fields marked * are required; a
-            column can only feed one field.
+            column can only feed one field. Date fields list only columns that
+            look like dates, amount fields only columns that look like amounts
+            {emptyColumns > 0
+              ? `, and ${emptyColumns} empty ${emptyColumns === 1 ? "column is" : "columns are"} hidden`
+              : ""}
+            .
           </p>
           <div className="mappings">
             {visibleFields.map((field) => (
@@ -413,7 +474,8 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
                     .filter(
                       (i) =>
                         mapping[field] === i ||
-                        !visibleFields.some((f) => mapping[f] === i),
+                        (fits(field, i) &&
+                          !visibleFields.some((f) => mapping[f] === i)),
                     )
                     .map((i) => (
                       <option key={i} value={i}>

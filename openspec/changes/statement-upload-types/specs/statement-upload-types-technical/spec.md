@@ -67,3 +67,16 @@ report row numbers relative to the original file.
 
 - **WHEN** a row's in/out cell equals the configured out value
 - **THEN** its amount is negative, otherwise positive
+
+### Requirement: Column Analysis and Date Format Detection
+
+`statement-core` SHALL provide column analysis (whether a column has values,
+looks like dates, looks like amounts, and a sample value) and date format
+detection over many samples, tolerating a small share of non-matching rows, and
+returning all equally-fitting formats so ambiguity can be reported. Amount
+detection SHALL NOT treat dates as amounts.
+
+#### Scenario: Footer row tolerated
+
+- **WHEN** a date column has valid dates in most rows and "Total" in the last
+- **THEN** the date format is still detected

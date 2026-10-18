@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  analyzeColumns,
   type CsvUploadType,
   detectDateFormat,
+  detectDateFormats,
   detectDelimiter,
   guessMapping,
+  looksLikeAmount,
   parseAmount,
   parseCsv,
   parseDate,
@@ -199,5 +202,64 @@ describe("guessMapping", () => {
       windowRows({ hasHeader: false }, parseCsv("2024-01-05,Coffee,-4.50\n")),
     );
     expect(g.assignments).toEqual({ 0: "date", 2: "amount" });
+  });
+});
+
+describe("date format detection across samples", () => {
+  it("uses all rows to resolve ambiguity", () => {
+    expect(detectDateFormats(["05/03/2024", "06/03/2024"])).toEqual([
+      "MM DD YYYY",
+      "DD MM YYYY",
+    ]);
+    expect(detectDateFormats(["05/03/2024", "31/03/2024"])).toEqual([
+      "DD MM YYYY",
+    ]);
+    expect(detectDateFormats(["05/03/2024", "03/31/2024"])).toEqual([
+      "MM DD YYYY",
+    ]);
+  });
+  it("tolerates a stray footer row but not garbage", () => {
+    const rows = [
+      "2024-01-01",
+      "2024-01-02",
+      "2024-01-03",
+      "2024-01-04",
+      "2024-01-05",
+      "Total",
+    ];
+    expect(detectDateFormats(rows)).toEqual(["YYYY MM DD"]);
+    expect(detectDateFormats(["a", "b"])).toEqual([]);
+    expect(detectDateFormats(["", " "])).toEqual([]);
+  });
+});
+
+describe("column analysis", () => {
+  it("recognizes amounts but not dates or text", () => {
+    for (const v of ["-1,234.50", "$12", "(5.00)", "12,50 $", "4.5-"]) {
+      expect(looksLikeAmount(v), v).toBe(true);
+    }
+    for (const v of ["2024-01-05", "Coffee", "", "05/03/2024"]) {
+      expect(looksLikeAmount(v), v).toBe(false);
+    }
+  });
+  it("flags empty, date-like and amount-like columns", () => {
+    const info = analyzeColumns(
+      [
+        ["2024-01-05", "Coffee", "-4.50", "", "x1"],
+        ["2024-01-06", "Pay", "100", "", ""],
+      ],
+      4,
+    );
+    expect(info.map((c) => c.hasValues)).toEqual([true, true, true, false]);
+    expect(info[0]).toMatchObject({
+      looksLikeDate: true,
+      looksLikeAmount: false,
+    });
+    expect(info[1]).toMatchObject({
+      looksLikeDate: false,
+      looksLikeAmount: false,
+      sample: "Coffee",
+    });
+    expect(info[2]).toMatchObject({ looksLikeAmount: true, sample: "-4.50" });
   });
 });

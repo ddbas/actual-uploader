@@ -169,9 +169,42 @@ export function parseDate(raw: string, format: DateFormat): string | null {
   return `${y}-${pad(m)}-${pad(d)}`;
 }
 
-/** Finds the first date format (in `DATE_FORMATS` order) that parses `sample`. */
-export function detectDateFormat(sample: string): DateFormat | null {
-  return DATE_FORMATS.find((f) => parseDate(sample, f) !== null) ?? null;
+/** Share of non-empty samples that must parse for a format to be considered. */
+const MATCH_THRESHOLD = 0.8;
+
+/**
+ * Returns every date format that fits the samples best (in `DATE_FORMATS`
+ * order). Looking at all samples, not just the first, resolves ambiguity: a
+ * value like `31/03/2024` rules out `MM DD YYYY`. A few stray rows (such as a
+ * footer) are tolerated. More than one result means the samples are ambiguous.
+ */
+export function detectDateFormats(samples: string[]): DateFormat[] {
+  const values = samples.map((v) => v.trim()).filter((v) => v !== "");
+  if (values.length === 0) return [];
+  const scored = DATE_FORMATS.map((f) => ({
+    f,
+    n: values.filter((v) => parseDate(v, f) !== null).length,
+  }));
+  const best = Math.max(...scored.map((x) => x.n));
+  if (best === 0 || best / values.length < MATCH_THRESHOLD) return [];
+  return scored.filter((x) => x.n === best).map((x) => x.f);
+}
+
+/** Finds the first date format (in `DATE_FORMATS` order) that fits `sample`. */
+export function detectDateFormat(sample: string | string[]): DateFormat | null {
+  return (
+    detectDateFormats(Array.isArray(sample) ? sample : [sample])[0] ?? null
+  );
+}
+
+/**
+ * Whether a string has the shape of a money amount ("-1,234.50", "$12",
+ * "(5.00)", "12,50 $"). Dates such as "2024-01-05" are not amounts.
+ */
+export function looksLikeAmount(raw: string): boolean {
+  return /^\(?[-+]?[^\d\s()+-]{0,3}\s*[-+]?\d[\d\s.,']*-?\)?\s*[^\d\s()+-]{0,3}$/.test(
+    raw.trim(),
+  );
 }
 
 /** Parses a money string to integer cents. Empty string yields null. */

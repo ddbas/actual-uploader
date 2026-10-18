@@ -42,6 +42,20 @@ and assigning a source column to each transaction field.
   column number and sample value when there is no header), and the user can also
   choose a date format and decimal separator
 
+#### Scenario: Columns that cannot supply a field are not offered
+
+- **WHEN** the field selects are populated
+- **THEN** columns with no values in any sample row are never offered, the date
+  select offers only columns whose values look like dates, and the amount,
+  outflow and inflow selects offer only columns whose values look like amounts
+
+#### Scenario: Options are named recognizably
+
+- **WHEN** a column is listed in a field select
+- **THEN** it is labelled with its header (or "Column N" without a header)
+  followed by its first non-empty value, and duplicate header names also show
+  their column number
+
 #### Scenario: Each column feeds at most one field
 
 - **WHEN** a column is selected for one field
@@ -74,10 +88,22 @@ user change any of it.
 - **THEN** those columns are pre-assigned to date, payee, outflow and inflow,
   and the split amount layout is enabled
 
-#### Scenario: Date format is detected
+#### Scenario: Date format is detected from all sample rows
 
-- **WHEN** the date column's first value is "2024-01-05"
-- **THEN** the date format "YYYY MM DD" is pre-selected
+- **WHEN** the date column's values are "05/03/2024" and "31/03/2024"
+- **THEN** the format "DD MM YYYY" is pre-selected, because every sample row is
+  considered and "31" rules out a month-first format
+
+#### Scenario: Ambiguous date format is flagged
+
+- **WHEN** more than one date format fits every sample date
+- **THEN** the first is pre-selected and the dashboard lists the other formats
+  that also fit, advising the user to check the preview
+
+#### Scenario: Format is re-detected when the date column changes
+
+- **WHEN** the user selects a different column for the date field
+- **THEN** the date format is detected again from that column's values
 
 ### Requirement: File and Amount Options
 

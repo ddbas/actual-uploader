@@ -1,6 +1,7 @@
+import { analyzeColumns } from "./columns.js";
 import {
   type DateFormat,
-  detectDateFormat,
+  detectDateFormats,
   type RowWindow,
 } from "./uploadType.js";
 
@@ -54,21 +55,26 @@ export function guessMapping(window: RowWindow): MappingGuess {
     }
   }
 
-  const sample = data[0] ?? [];
+  const columnCount = Math.max(
+    0,
+    ...data.map((r) => r.length),
+    header?.length ?? 0,
+  );
+  const info = analyzeColumns(data, columnCount);
   const has = (f: FieldKey) => Object.values(assignments).includes(f);
+  const firstUnused = (pred: (c: (typeof info)[number]) => boolean) =>
+    info.find((c) => !used.has(c.index) && pred(c))?.index;
 
-  if (!has("date")) {
+  // Fall back to what the values look like across the sample rows.
+  if (!has("date"))
     take(
       "date",
-      sample.findIndex(
-        (v, i) => !used.has(i) && /^\d+[-/.]\d+[-/.]\d+$/.test(v.trim()),
-      ),
+      firstUnused((c) => c.looksLikeDate),
     );
-  }
   if (!has("amount") && !(has("debit") && has("credit"))) {
     take(
       "amount",
-      sample.findIndex((v, i) => !used.has(i) && /^-?[.,\d]+$/.test(v.trim())),
+      firstUnused((c) => c.looksLikeAmount && !c.looksLikeDate),
     );
   }
 
@@ -86,10 +92,10 @@ export function guessMapping(window: RowWindow): MappingGuess {
   const dateIndex = Object.entries(assignments).find(
     ([, f]) => f === "date",
   )?.[0];
-  const dateSample =
-    dateIndex === undefined ? undefined : data[0]?.[Number(dateIndex)];
+  const dateValues =
+    dateIndex === undefined ? [] : data.map((r) => r[Number(dateIndex)] ?? "");
   const dateFormat =
-    (dateSample && detectDateFormat(dateSample)) ||
+    detectDateFormats(dateValues)[0] ??
     (dateIndex === undefined ? "YYYY MM DD" : "MM DD YYYY");
 
   // European-style amounts use a decimal comma ("12,50").

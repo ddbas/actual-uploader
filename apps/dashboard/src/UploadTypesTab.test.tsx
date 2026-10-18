@@ -62,10 +62,13 @@ describe("UploadTypesTab", () => {
   }
   const field = (label: string) =>
     screen.getByLabelText(label) as HTMLSelectElement;
+  /** Option texts without the ": sample" suffix. */
   const optionsOf = (label: string) =>
     within(field(label))
       .queryAllByRole("option")
-      .map((o) => o.textContent);
+      .map((o) => (o.textContent ?? "").split(":")[0]);
+  const selectedOf = (label: string) =>
+    field(label).selectedOptions[0]?.textContent;
   const preview = () =>
     screen.getByRole("table", { name: "Transaction preview" });
 
@@ -78,10 +81,10 @@ describe("UploadTypesTab", () => {
       (screen.getByLabelText(/Split amount into separate/) as HTMLInputElement)
         .checked,
     ).toBe(true);
-    expect(field("Date").selectedOptions[0]?.textContent).toBe("Date");
-    expect(field("Outflow").selectedOptions[0]?.textContent).toBe("Debit");
-    expect(field("Inflow").selectedOptions[0]?.textContent).toBe("Credit");
-    expect(field("Payee").selectedOptions[0]?.textContent).toBe("Description");
+    expect(selectedOf("Date")).toBe("Date: 2024-01-05");
+    expect(selectedOf("Outflow")).toBe("Debit: 4.50");
+    expect(selectedOf("Inflow")).toBe("Credit: 100.00");
+    expect(selectedOf("Payee")).toBe("Description: Coffee");
 
     // preview columns are the fields, filled from the mapping
     const headers = within(preview())
@@ -110,7 +113,7 @@ describe("UploadTypesTab", () => {
     expect(optionsOf("Notes")).toContain("Description");
     expect(within(preview()).queryByText("Coffee")).toBeNull();
 
-    await user.selectOptions(field("Notes"), "Description");
+    await user.selectOptions(field("Notes"), "1");
     expect(within(preview()).getByText("Coffee")).toBeTruthy();
     expect((save as HTMLButtonElement).disabled).toBe(false);
     await user.click(save);
@@ -149,16 +152,60 @@ describe("UploadTypesTab", () => {
   });
 
   it("blocks saving until required fields are mapped", async () => {
-    const user = await openWizard("foo,bar\nx,y\n");
+    const user = await openWizard("foo,bar,baz\n2024-01-05,hello,12\n");
     const save = screen.getByRole("button", { name: "Save upload type" });
+    expect(selectedOf("Date")).toBe("foo: 2024-01-05");
+    expect(selectedOf("Amount")).toBe("baz: 12");
+    expect((save as HTMLButtonElement).disabled).toBe(false);
+
+    await user.selectOptions(field("Date"), "");
     expect((save as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText("Date column is required")).toBeTruthy();
+  });
 
-    await user.selectOptions(field("Date"), "foo");
-    await user.selectOptions(field("Amount"), "bar");
-    expect((save as HTMLButtonElement).disabled).toBe(false);
-    // "x" isn't a date or amount, so the preview flags it.
-    expect(within(preview()).getAllByText("Invalid").length).toBe(2);
+  it("only offers columns that can supply a field", async () => {
+    await openWizard(
+      "Date,Payee,Empty,Amount\n2024-01-05,Coffee,,-4.50\n2024-01-06,Pay,,100\n",
+    );
+    // text columns can't be a date or an amount; empty columns are never offered
+    expect(optionsOf("Date")).toEqual(["Choose field…", "Date"]);
+    expect(optionsOf("Amount")).toEqual(["Choose field…", "Amount"]);
+    expect(optionsOf("Notes")).toEqual(["Choose field…"]);
+    expect(screen.getByText(/1 empty column is hidden/)).toBeTruthy();
+  });
+
+  it("detects the date format from all rows and flags ambiguity", async () => {
+    const user = await openWizard(
+      "Date,Amount\n05/03/2024,1\n06/03/2024,2\n31/03/2024,3\n",
+    );
+    // 31/03 rules out month-first
+    expect(
+      (screen.getByLabelText("Date format") as HTMLSelectElement).value,
+    ).toBe("DD MM YYYY");
+    expect(screen.queryByRole("note")).toBeNull();
+    expect(within(preview()).getByText("2024-03-05")).toBeTruthy();
+    cleanup();
+
+    await openWizard("Date,Amount\n05/03/2024,1\n06/03/2024,2\n");
+    expect(screen.getByRole("note").textContent).toMatch(
+      /also fit DD\/MM\/YYYY/,
+    );
+    void user;
+  });
+
+  it("names options with the header and a sample value", async () => {
+    await openWizard(
+      "Date,Date,Note\n2024-01-05,2024-01-06,a very long memo that goes on and on\n",
+    );
+    const labels = within(field("Notes"))
+      .getAllByRole("option")
+      .map((o) => o.textContent);
+    expect(labels).toContain("Note: a very long memo that g…");
+    expect(
+      within(field("Date"))
+        .getAllByRole("option")
+        .map((o) => o.textContent),
+    ).toEqual(expect.arrayContaining(["Date (column 2): 2024-01-06"]));
   });
 
   it("requires the in/out column and value in that layout", async () => {
@@ -171,8 +218,8 @@ describe("UploadTypesTab", () => {
     expect(screen.queryByLabelText("Outflow")).toBeNull();
 
     await user.selectOptions(field("Payee"), "");
-    await user.selectOptions(field("In/Out"), "Description");
-    await user.selectOptions(field("Amount"), "Debit");
+    await user.selectOptions(field("In/Out"), "1");
+    await user.selectOptions(field("Amount"), "2");
     await user.type(screen.getByLabelText("In/Out outflow value"), "Coffee");
     expect(within(preview()).getByText("-4.50")).toBeTruthy();
   });
