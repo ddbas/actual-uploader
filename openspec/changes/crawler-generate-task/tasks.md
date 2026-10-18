@@ -21,8 +21,10 @@
 - [ ] 3.1 Implement argument validation (name kebab-case, http(s) URL) and
       verify each failure mode exits non-zero with usage without launching a
       browser
-- [ ] 3.2 Spawn codegen with a temp output file, print instructions, read and
-      delete the file on exit, and verify with a manual run
+- [ ] 3.2 Spawn codegen with a temp output file, print the large pause-key
+      banner (marker key as on/off toggle, how to finish, macOS `fn` note)
+      before the browser opens, read and delete the file on exit, and verify
+      with a manual run
 - [ ] 3.3 Implement the crawler template and write
       `packages/crawlers/src/<name>.ts`, and verify the generated file passes
       Biome and type checks

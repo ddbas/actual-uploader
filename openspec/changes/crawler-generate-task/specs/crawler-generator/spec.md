@@ -100,15 +100,26 @@ the developer when it did so.
 - **THEN** the generated crawler contains a manual pause in its place, the
   password appears nowhere in the generated files, and the task prints a warning
 
-### Requirement: Task Instructs the Developer
+### Requirement: Task Displays a Prominent Pause-Key Reminder
 
-Before opening the browser the task SHALL print brief instructions covering how
-to mark a manual step and how to finish recording.
+Before opening the browser the task SHALL print a large, visually distinct
+banner, impossible to mistake for ordinary log output, stating that the marker
+key (e.g. `F9`) toggles manual (pause) mode on and off, and that anything done
+between the two presses (such as logging in) is not recorded. The banner SHALL
+reflect the configured marker key and SHALL also say how to finish recording. On
+macOS it SHALL note that the `fn` key may need to be held to produce a function
+key.
 
-#### Scenario: Instructions shown
+#### Scenario: Banner shown at start
 
 - **WHEN** recording starts
-- **THEN** the terminal shows the marker key and how to end the recording
+- **THEN** the terminal shows the banner naming the marker key as the
+  manual-mode toggle, before the browser opens
+
+#### Scenario: Custom marker key
+
+- **WHEN** the developer configures a different marker key
+- **THEN** the banner names that key instead of `F9`
 
 ### Requirement: Generated Crawler Appears in the Dashboard
 
