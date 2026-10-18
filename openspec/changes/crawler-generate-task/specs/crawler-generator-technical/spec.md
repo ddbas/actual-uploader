@@ -65,5 +65,5 @@ settings and pass Biome checks.
 
 #### Scenario: Generated crawler builds
 
-- **WHEN** a crawler is generated and `mise run pnpm:build` is run
+- **WHEN** a crawler is generated and `mise run build` is run
 - **THEN** the build succeeds and the crawler is returned by the registry

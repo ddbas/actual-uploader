@@ -39,5 +39,5 @@
 - [x] 4.2 Document the workflow (marker key, finishing a recording) in README.md
       and fix the stale `mise run install`/`build` task names
 - [x] 4.3 End-to-end: generate a crawler against a test page, run
-      `mise run pnpm:build`, and verify the build succeeds and no typed
-      credential appears in the repo
+      `mise run build`, and verify the build succeeds and no typed credential
+      appears in the repo

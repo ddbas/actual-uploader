@@ -5,8 +5,8 @@
 Install dependencies and build the workspace, then start the local binary:
 
 ```sh
-mise run pnpm:install
-mise run pnpm:build
+mise run install
+mise run build
 pnpm --filter server start
 ```
 

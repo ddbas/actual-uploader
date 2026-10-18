@@ -1,37 +1,31 @@
-[hooks]
-enter = [
-  { task = "lefthook:install" },
-  { task = "codegraph:init" }
-]
+#:schema https://mise.jdx.dev/schema/mise.json
 
-[tasks."codegraph:init"]
-description = "Initialize codegraph"
-run = "codegraph init"
-outputs = [".codegraph/codegraph.db"]
+[settings]
+experimental = true
+lockfile = true
+
+[hooks]
+enter = "mise exec -- lefthook install"
+
+[tasks.build]
+description = "Build the project"
+run = "pnpm build"
 
 [tasks."crawler:generate"]
 description = "Record a browsing session and scaffold a crawler: crawler:generate <name> <url> [--marker-key <key>]"
 run = "pnpm --filter crawlers exec tsx scripts/generate-crawler.ts"
 
-[tasks."lefthook:install"]
-description = "Install lefthook"
-run = "lefthook install"
-
-[tasks."pnpm:build"]
-description = "Build the project"
-run = "pnpm turbo:build"
-
-[tasks."pnpm:dev"]
+[tasks.dev]
 description = "Run dev processes in parallel"
-run = "pnpm turbo:dev"
+run = "pnpm dev"
 
-[tasks."pnpm:install"]
+[tasks.install]
 description = "Install dependencies"
 run = "pnpm install"
 
-[tasks."pnpm:test"]
+[tasks.test]
 description = "Run tests"
-run = "pnpm turbo:test"
+run = "pnpm test"
 
 [tools]
 lefthook = "latest"
