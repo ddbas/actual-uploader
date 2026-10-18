@@ -15,6 +15,12 @@ In the **Sources** tab, define how to read your bank's statement files. In the
 **Upload** tab, choose a source, upload one or more statement files, and review
 the parsed transactions before confirming.
 
+Before uploading, enter your Actual server URL, server password, sync ID and
+(optionally) end-to-end encryption password under **Settings → Actual**. The
+header shows whether the connection works. The server uses the official
+`@actual-app/api` package, so its version should match your Actual server's
+version; a mismatch shows up as the reason next to "Not connected".
+
 For local development (with hot reload), run the server and dashboard dev
 servers in separate terminals:
 

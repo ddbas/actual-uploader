@@ -1,3 +1,2 @@
-- Upload to Actual Budget
 - Store in database
 - Prevent duplicate transactions

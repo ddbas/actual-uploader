@@ -19,6 +19,7 @@ async function main() {
     actualSettings: new ActualSettingsStore(
       join(dataDir, "actual-settings.json"),
     ),
+    actualDataDir: join(dataDir, "actual-cache"),
     staticDir: existsSync(staticDir) ? staticDir : undefined,
   });
 
