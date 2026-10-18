@@ -97,6 +97,14 @@ stored.
   prints a warning that suggests focusing an element before pressing the marker
   key
 
+#### Scenario: Odd number of markers
+
+- **WHEN** the recording contains an odd number of marker presses, for example
+  because the start press was dropped for lack of focus
+- **THEN** the task prints a warning stating the count, explaining that a press
+  was probably not recorded and why, and telling the developer to review the
+  generated crawler
+
 ### Requirement: Credentials Are Never Written to Disk
 
 The generated crawler SHALL NOT contain credential values. Text entered into

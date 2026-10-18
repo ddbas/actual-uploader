@@ -16,6 +16,8 @@
       in the output
 - [x] 2.3 Strip the wrapper/launch boilerplate so only page steps remain, and
       verify with a unit test
+- [x] 2.4 Warn when the marker-press count is odd (swallowed press), verified
+      with unit tests for odd and balanced recordings
 
 ## 3. Generator Script
 

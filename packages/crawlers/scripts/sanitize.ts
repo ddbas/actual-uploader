@@ -109,6 +109,7 @@ export function sanitize(
   const steps: string[] = [];
   const warnings: string[] = [];
   let inManualSection = false;
+  let markerCount = 0;
 
   const pushPause = () => {
     if (steps[steps.length - 1] !== PAUSE_STATEMENT) {
@@ -118,6 +119,7 @@ export function sanitize(
 
   for (const statement of statements) {
     if (isMarkerPress(statement, markerKey)) {
+      markerCount++;
       if (inManualSection) {
         inManualSection = false;
       } else {
@@ -139,9 +141,9 @@ export function sanitize(
     steps.push(statement);
   }
 
-  if (inManualSection) {
+  if (markerCount % 2 === 1) {
     warnings.push(
-      `Marker key ${markerKey} was pressed to start a manual section but never to end it; everything after it was treated as manual. (Codegen drops key presses when no element has focus; click a field or button before pressing the marker key.)`,
+      `Recorded an odd number of ${markerKey} presses (${markerCount}), so a manual section is unbalanced and everything after the last marker was treated as manual. A press was probably not recorded: codegen drops key presses when no element has focus, so click a field or button before pressing the marker key. Check the generated crawler.`,
     );
   }
 

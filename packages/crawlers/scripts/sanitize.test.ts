@@ -78,6 +78,25 @@ describe("sanitize", () => {
     expect(result.warnings).toHaveLength(1);
   });
 
+  it("warns on any odd marker count, e.g. a swallowed start marker", () => {
+    // Only the end marker was recorded (start press had no focus).
+    const result = sanitize(
+      wrap(
+        "await page.getByLabel('User').fill('bob');",
+        "await page.getByRole('button').click();",
+        "await page.getByRole('textbox').press('Escape');",
+        "await page.getByRole('link').click();",
+      ),
+    );
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0]).toMatch(/odd number/);
+    expect(result.warnings[0]).toMatch(/focus/);
+  });
+
+  it("does not warn when markers are balanced", () => {
+    expect(sanitize(fixture).warnings.join("")).not.toMatch(/odd number/);
+  });
+
   it("honors a custom marker key", () => {
     const result = sanitize(
       wrap(

@@ -39,14 +39,22 @@ of the recording; (2) every `fill` statement targeting a likely password field
 (by accessible name or selector matching a configurable pattern list including
 English and French terms) is replaced with `await page.pause();`; (3) the
 Playwright test wrapper and launch boilerplate are removed so only the page
-steps remain. Redaction SHALL occur in memory before any crawler file is
-written; the raw recording SHALL be deleted.
+steps remain. The transformation SHALL count marker presses and emit a warning
+whenever the count is odd, regardless of which press was missed. Redaction SHALL
+occur in memory before any crawler file is written; the raw recording SHALL be
+deleted.
 
 #### Scenario: Marked span replaced
 
 - **WHEN** the recording contains a `press('Escape')`, a username `fill`, a
   password `fill`, a submit `click`, and a second `press('Escape')`
 - **THEN** the output contains a single `await page.pause();` in their place
+
+#### Scenario: Odd marker count warns
+
+- **WHEN** the recording contains an odd number of marker presses
+- **THEN** the result includes a warning naming the count and the likely cause
+  (no focused element when the key was pressed)
 
 #### Scenario: Password-like fill replaced
 
