@@ -1,5 +1,6 @@
 import type { Source, SourceDraft } from "statement-core";
 import type { CrawlerSummary } from "./serverTypes.js";
+import type { Transaction } from "./types.js";
 
 export async function fetchCrawlers(): Promise<CrawlerSummary[]> {
   const res = await fetch("/api/crawlers");
@@ -44,4 +45,29 @@ export async function deleteSource(id: string): Promise<void> {
   await fetch(`/api/sources/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
+}
+
+export interface ProcessedFile {
+  transactions: Transaction[];
+  errors: { row: number; message: string }[];
+}
+
+export async function processStatement(
+  sourceId: string,
+  account: string,
+  content: string,
+): Promise<ProcessedFile> {
+  const res = await fetch(
+    `/api/sources/${encodeURIComponent(sourceId)}/process`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ account, content }),
+    },
+  );
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? "Failed to process file");
+  }
+  return res.json();
 }

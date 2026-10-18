@@ -23,7 +23,7 @@ export function HomeTab({
   onRunAll,
 }: HomeTabProps) {
   return (
-    <section aria-label="Home">
+    <section aria-label="Crawlers">
       <button type="button" onClick={onRunAll}>
         Run All
       </button>

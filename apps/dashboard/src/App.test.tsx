@@ -33,6 +33,9 @@ function mockFetch() {
     if (url.endsWith("/api/crawlers")) {
       return new Response(JSON.stringify(CRAWLERS), { status: 200 });
     }
+    if (url.endsWith("/api/sources")) {
+      return new Response("[]", { status: 200 });
+    }
     return new Response(JSON.stringify({ ok: true }), { status: 202 });
   });
 }
@@ -66,12 +69,10 @@ afterEach(() => {
 });
 
 describe("App", () => {
-  it("shows the Home tab selected by default, with Results hidden", async () => {
+  it("shows the Upload tab selected by default, with Results hidden", async () => {
     render(<App />);
 
-    await screen.findByText("Desjardins (Mock)");
-
-    expect(screen.getByRole("tab", { name: "Home" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: "Upload" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
@@ -82,6 +83,7 @@ describe("App", () => {
 
   it("lists all registered crawlers with a Run button and Run All above the list", async () => {
     render(<App />);
+    await userEvent.click(screen.getByRole("tab", { name: "Crawlers" }));
 
     await screen.findByText("Desjardins (Mock)");
     expect(screen.getByText("Other Bank")).toBeInTheDocument();
@@ -91,6 +93,7 @@ describe("App", () => {
 
   it("reveals the Results tab and populates it after the first crawler finishes", async () => {
     render(<App />);
+    await userEvent.click(screen.getByRole("tab", { name: "Crawlers" }));
     await screen.findByText("Desjardins (Mock)");
 
     const source = getSource();
@@ -124,6 +127,7 @@ describe("App", () => {
 
   it("running one crawler does not change another crawler's state", async () => {
     render(<App />);
+    await userEvent.click(screen.getByRole("tab", { name: "Crawlers" }));
     await screen.findByText("Desjardins (Mock)");
 
     const source = getSource();
@@ -142,6 +146,7 @@ describe("App", () => {
 
   it("aggregates transactions from multiple crawler runs, e.g. Run All", async () => {
     render(<App />);
+    await userEvent.click(screen.getByRole("tab", { name: "Crawlers" }));
     await screen.findByText("Desjardins (Mock)");
 
     const source = getSource();
