@@ -1,0 +1,25 @@
+const { chromium } = require('playwright');
+
+(async () => {
+  const browser = await chromium.launch({
+    headless: false
+  });
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto('https://bank.example/login');
+  await page.getByRole('link', { name: 'Accounts' }).click();
+  await page.getByRole('textbox').press('F9');
+  await page.getByRole('textbox', { name: 'Username' }).fill('alice-secret-user');
+  await page.getByRole('textbox', { name: 'Password' }).fill('hunter2-secret');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.locator('body').press('F9');
+  await page.getByRole('link', { name: 'Chequing' }).click({
+    button: 'right'
+  });
+  await page.getByRole('textbox', { name: 'Mot de passe' }).fill('motdepasse-secret');
+  await page.getByRole('button', { name: 'Export' }).click();
+
+  // ---------------------
+  await context.close();
+  await browser.close();
+})();

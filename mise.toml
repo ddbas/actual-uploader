@@ -9,6 +9,10 @@ description = "Initialize codegraph"
 run = "codegraph init"
 outputs = [".codegraph/codegraph.db"]
 
+[tasks."crawler:generate"]
+description = "Record a browsing session and scaffold a crawler: crawler:generate <name> <url> [--marker-key <key>]"
+run = "pnpm --filter crawlers exec tsx scripts/generate-crawler.ts"
+
 [tasks."lefthook:install"]
 description = "Install lefthook"
 run = "lefthook install"
