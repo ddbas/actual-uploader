@@ -15,19 +15,19 @@ Research findings that shape this design:
    returns recorded code; the recorder is only reachable via the CLI or private
    `_enableRecorder`-style internals, which we avoid.
 2. **Marking a `page.pause()` step in codegen: no built-in way.** The recorder
-   offers no "insert pause" action.
-3. **Keyboard markers proved unreliable.** In theory the recorder captures
-   non-printable keys such as `F9`, but in practice the press was not picked up
-   for the developer (browser/OS function-key handling, e.g. macOS media keys,
-   and page key handling). The marker therefore uses a mouse click on an
-   injected UI element, which the recorder records reliably (verified).
-4. **Bank sites deny automated browsers.** Playwright's default launch passes
-   `--enable-automation`, sets `navigator.webdriver`, and `playwright codegen`
-   offers no way to remove these; the developer saw "access denied" after login.
-   Mitigations (not a guarantee): launch the user's installed Google Chrome
-   (`channel: "chrome"`), drop `--enable-automation`, and pass
-   `--disable-blink-features=AutomationControlled`. The same options are used by
-   generated crawlers via a shared `launchBrowser()` helper.
+   UI offers record/stop, copy, clear, target language, and assertion tools, but
+   no "insert pause" action. (`page.pause()` is the opposite direction: it opens
+   the Inspector from inside a script.) So the marker must be conveyed through
+   something the recorder does capture.
+3. **What the recorder captures from the keyboard.** Checked against the
+   recorder source (`packages/injected/src/recorder/recorder.ts`): printable
+   characters typed with no modifier are _not_ recorded as key presses; they
+   only appear as a `fill` when an editable field is focused (and a `check` on a
+   checkbox). Typing a word outside a field is therefore invisible.
+   Non-printable keys (e.g. `F9`, arrows, `Escape`) and any key with
+   Ctrl/Alt/Meta _are_ recorded as `press` actions, even with nothing focused
+   (they target the focused element or `body`). So a function key or a modifier
+   chord works as a marker, anywhere on the page.
 
 ## Goals / Non-Goals
 
@@ -46,39 +46,35 @@ Research findings that shape this design:
 
 ## Decisions
 
-**A floating toggle button delimits manual sections.** The task launches the
-browser itself and injects, into every top-level page, a button (in an open
-shadow root, fixed bottom-right, `aria-label`/id `crawler-manual-toggle`) that
-shows red "MANUAL MODE ON" or green "Recording". The developer clicks it to
-begin a manual section, does the manual work (typing credentials, solving MFA,
-...), then clicks it again. The recorder records each click as a statement
-naming `crawler-manual-toggle`; post-processing drops every statement between
-two such statements and emits one `await page.pause();`. This beats marking
+**A marker key delimits manual sections.** The developer presses `F9` (default;
+configurable with an option) to begin a manual section, does the manual work
+(typing credentials, solving MFA, ...) in the recording browser, then presses
+`F9` again. Post-processing drops every recorded statement between the two
+`press('F9')` statements and emits one `await page.pause();`. This beats marking
 individual fields: the recorded submit click or navigation inside the section
 would otherwise replay after the human already did it, and typed values never
 reach the output. An unmatched start marker treats the rest of the recording as
-manual, with a warning. Button state is held by the task process and pushed to
-pages so it survives navigations. Alternatives rejected: a function-key marker
-(not reliably recorded, see finding 3), sentinel text typed into a field (only
-works in editable fields), hand-editing afterwards (easy to forget), and only
-heuristic redaction (misses usernames and one-time codes).
+manual, with a warning. Marker key choice: a bare function key avoids colliding
+with typing, works with no field focused, and is recorded by codegen. Avoid
+`F5`/`F11`/`F12`/`Escape` (browser or page behavior). Mac laptops need `fn` for
+F-keys, which is why the key is configurable. Alternatives: (a) sentinel text
+such as `__PAUSE__` typed into a field — only works in an editable field and
+leaves a bogus `fill` to clean up; (b) a Playwright UI button — none exists; (c)
+hand-editing afterwards — easy to forget and risks committing credentials; (d)
+only heuristic redaction — catches passwords but not usernames, one-time codes,
+or other manual steps.
 
 **Heuristic redaction as a safety net.** `fill` statements whose target matches
 a pattern list (`password`, `passcode`, `mot de passe`, `pin`, `nip`, ...)
-become pauses even without the toggle, with a warning. Keeps real passwords out
-of memory-to-disk paths. Usernames are not auto-redacted (too many false
-positives); users mark them with the toggle button.
+become pauses even without the marker key, with a warning. Keeps real passwords
+out of memory-to-disk paths. Usernames are not auto-redacted (too many false
+positives); users mark them with the marker key.
 
-**Launch the browser ourselves and enable the recorder on its context.** The
-task launches the browser via `launchBrowser()` and calls
-`BrowserContext._enableRecorder({ mode: "recording", outputFile, ... })`, the
-same private call `playwright codegen` makes. This is the only way to both
-control launch options and inject the toggle button (the CLI offers neither).
-Trade-off: it relies on a private API; the `playwright` version is pinned in the
-lockfile, `sanitize()` fails loudly on unrecognizable output, and unit tests
-cover the format. The recording is written to a temp file, read after the
-browser disconnects, and deleted. Injected scripts are plain strings (bundlers
-inject helpers like `__name` into serialized functions, which break in-page).
+**Spawn the codegen CLI rather than a library API.** Use the local `playwright`
+binary (`pnpm exec playwright codegen --target=javascript -o <tmp> <url>`),
+avoiding `npx` downloads and private APIs. Alternative `playwright-test` target
+rejected since output wraps in a test; library JS output is easier to strip down
+to page steps.
 
 **Script is TypeScript in `packages/crawlers/scripts/`,** alongside the existing
 `smoke-mock.ts`, invoked by the Mise task. Pure transformation
@@ -90,8 +86,8 @@ non-empty recording is sanitized, so a cancelled session never destroys an
 existing crawler.
 
 **Templated output.** A template emits a crawler file with `id`, `name`,
-`description`, a headed browser from `launchBrowser()`, the processed steps, and
-a `// TODO: extract transactions` placeholder yielding nothing. Index
+`description`, a headed `chromium.launch({ headless: false })`, the processed
+steps, and a `// TODO: extract transactions` placeholder yielding nothing. Index
 registration is done by inserting an import and `registerCrawler` line.
 
 ## Risks / Trade-offs
@@ -103,17 +99,14 @@ registration is done by inserting an import and `registerCrawler` line.
 - [Heuristic redaction misses a credential field with an unusual name] →
   Document the marker key as the primary mechanism; warn the user to review the
   generated file; keep the raw recording only in a temp file that is deleted.
-- [The injected button could be hidden or blocked by a page's own overlay or
-  CSP] → It uses the maximum z-index in a shadow root and is added through the
-  init-script mechanism, which is not subject to page CSP.
-- [Anti-bot detection may still trigger (CDP, fingerprinting)] → Best effort; if
-  a site still denies access, fall back to a persistent real-Chrome profile or
-  attaching to a manually started Chrome (future work).
+- [The marker key press reaches the page and may trigger a site shortcut, or the
+  browser may swallow it] → Default to `F9`, make it configurable, and verify in
+  the spike that codegen records it.
 - [`page.pause()` requires a headed browser] → Generated crawlers launch headed.
   If crawlers later run from the server/dashboard, a headed browser must be
   available (relevant to the broader "real crawler" TODO).
 
 ## Open Questions
 
-- Whether the mitigations are enough for the developer's bank; to be verified by
-  the developer.
+- Whether closing only the browser window (vs. the Inspector) reliably ends the
+  codegen process on all platforms; to be verified during implementation.

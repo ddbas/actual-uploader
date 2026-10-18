@@ -2,7 +2,7 @@
  * `crawler:generate <name> <url>`: records a browsing session with Playwright
  * codegen and scaffolds a registered crawler from it.
  */
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import {
   existsSync,
   mkdtempSync,
@@ -20,11 +20,30 @@ import {
   renderCrawler,
   USAGE,
 } from "./generate-lib.js";
-import { record } from "./record.js";
 import { sanitize } from "./sanitize.js";
 
 const packageDir = fileURLToPath(new URL("..", import.meta.url));
 const repoRoot = join(packageDir, "..", "..");
+
+function record(url: string, outputFile: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      "pnpm",
+      [
+        "exec",
+        "playwright",
+        "codegen",
+        "--target=javascript",
+        "-o",
+        outputFile,
+        url,
+      ],
+      { cwd: packageDir, stdio: "inherit" },
+    );
+    child.on("error", reject);
+    child.on("close", (code) => resolve(code ?? 1));
+  });
+}
 
 async function main(): Promise<number> {
   const parsed = parseArgs(process.argv.slice(2));
@@ -32,23 +51,29 @@ async function main(): Promise<number> {
     console.error(`${parsed.error}\n\n${USAGE}`);
     return 1;
   }
-  const { name, url } = parsed.args;
+  const { name, url, markerKey } = parsed.args;
 
-  console.log(`\n${renderBanner()}\n`);
+  console.log(`\n${renderBanner(markerKey)}\n`);
 
   const tmp = mkdtempSync(join(tmpdir(), "crawler-generate-"));
   const outputFile = join(tmp, "recording.js");
   let recording = "";
   try {
-    await record(url, outputFile);
+    const code = await record(url, outputFile);
     if (existsSync(outputFile)) {
       recording = readFileSync(outputFile, "utf8");
+    }
+    if (code !== 0 && !recording) {
+      console.error(`Playwright codegen exited with status ${code}.`);
+      return 1;
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
 
-  const { steps, warnings, recordedStepCount } = sanitize(recording);
+  const { steps, warnings, recordedStepCount } = sanitize(recording, {
+    markerKey,
+  });
 
   if (recordedStepCount === 0) {
     if (recording.trim() !== "" && steps.length === 0) {

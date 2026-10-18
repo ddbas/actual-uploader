@@ -5,11 +5,7 @@
  */
 
 export const PAUSE_STATEMENT = "await page.pause();";
-/**
- * Accessible name / id of the injected manual-mode toggle button. A recorded
- * click on it is the marker that starts or ends a manual section.
- */
-export const MANUAL_TOGGLE_TOKEN = "crawler-manual-toggle";
+export const DEFAULT_MARKER_KEY = "F9";
 
 /** Terms (English and French) that indicate a password-like field. */
 export const DEFAULT_PASSWORD_PATTERNS: RegExp[] = [
@@ -25,6 +21,7 @@ export const DEFAULT_PASSWORD_PATTERNS: RegExp[] = [
 ];
 
 export interface SanitizeOptions {
+  markerKey?: string;
   passwordPatterns?: RegExp[];
 }
 
@@ -82,8 +79,9 @@ function normalize(text: string): string {
     .toLowerCase();
 }
 
-function isMarker(statement: string): boolean {
-  return statement.includes(MANUAL_TOGGLE_TOKEN);
+function isMarkerPress(statement: string, markerKey: string): boolean {
+  const match = statement.match(/\.press\(\s*(['"`])(.*?)\1/);
+  return match?.[2] === markerKey;
 }
 
 /** The locator portion of a `.fill(...)`, i.e. everything before the call. */
@@ -105,6 +103,7 @@ export function sanitize(
   recording: string,
   options: SanitizeOptions = {},
 ): SanitizeResult {
+  const markerKey = options.markerKey ?? DEFAULT_MARKER_KEY;
   const patterns = options.passwordPatterns ?? DEFAULT_PASSWORD_PATTERNS;
   const statements = groupStatements(extractBody(recording));
   const steps: string[] = [];
@@ -118,11 +117,7 @@ export function sanitize(
   };
 
   for (const statement of statements) {
-    // Closing the window to finish recording is recorded; it is not a step.
-    if (/^await page\d*\.close\(\)/.test(statement)) {
-      continue;
-    }
-    if (isMarker(statement)) {
+    if (isMarkerPress(statement, markerKey)) {
       if (inManualSection) {
         inManualSection = false;
       } else {
@@ -146,7 +141,7 @@ export function sanitize(
 
   if (inManualSection) {
     warnings.push(
-      "Manual mode was switched on but never off; everything after it was treated as manual.",
+      `Marker key ${markerKey} was pressed to start a manual section but never to end it; everything after it was treated as manual.`,
     );
   }
 
