@@ -230,6 +230,9 @@ importers:
       react-dom:
         specifier: ^19.2.8
         version: 19.2.8(react@19.2.8)
+      statement-core:
+        specifier: workspace:*
+        version: link:../../packages/statement-core
     devDependencies:
       '@testing-library/jest-dom':
         specifier: ^7.0.0
@@ -273,6 +276,9 @@ importers:
       open:
         specifier: ^11.0.0
         version: 11.0.0
+      statement-core:
+        specifier: workspace:*
+        version: link:../../packages/statement-core
     devDependencies:
       '@types/node':
         specifier: ^26.2.0
@@ -323,6 +329,22 @@ importers:
       tsx:
         specifier: ^4.23.11
         version: 4.23.11
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: ^4.1.12
+        version: 4.1.12(@types/node@26.2.0)(jsdom@30.0.1)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.1)(tsx@4.23.11))
+
+  packages/statement-core:
+    dependencies:
+      crawler-core:
+        specifier: workspace:*
+        version: link:../crawler-core
+    devDependencies:
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(postcss@8.5.26)(tsx@4.23.11)(typescript@7.0.2)
       typescript:
         specifier: ^7.0.2
         version: 7.0.2

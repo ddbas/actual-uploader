@@ -1,0 +1,28 @@
+{
+  "name": "statement-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup && tsc -p tsconfig.build.json --outDir dist",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "dev": "tsup --watch"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.12"
+  },
+  "dependencies": {
+    "crawler-core": "workspace:*"
+  }
+}

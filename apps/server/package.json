@@ -17,7 +17,8 @@
   "dependencies": {
     "crawler-core": "workspace:*",
     "crawlers": "workspace:*",
-    "open": "^11.0.0"
+    "open": "^11.0.0",
+    "statement-core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

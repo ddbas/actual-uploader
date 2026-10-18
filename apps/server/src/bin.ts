@@ -1,18 +1,23 @@
 #!/usr/bin/env node
 import { existsSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import "crawlers";
 import { getCrawlers } from "crawler-core";
 import open from "open";
 import { createServer } from "./server.js";
+import { UploadTypeStore } from "./uploadTypeStore.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function main() {
   const staticDir = join(__dirname, "..", "..", "dashboard", "dist");
+  const dataDir =
+    process.env.ACCOUNT_CRAWLER_DATA_DIR ?? join(homedir(), ".account-crawler");
   const { server } = createServer({
     crawlers: getCrawlers(),
+    uploadTypes: new UploadTypeStore(join(dataDir, "upload-types.json")),
     staticDir: existsSync(staticDir) ? staticDir : undefined,
   });
 

@@ -9,7 +9,8 @@
       "dependsOn": ["^check-types"]
     },
     "test": {
-      "outputs": ["coverage/**"]
+      "outputs": ["coverage/**"],
+      "dependsOn": ["^build"]
     },
     "//#format:biome": {
       "inputs": [
