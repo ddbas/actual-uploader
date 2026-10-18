@@ -54,8 +54,8 @@ assigning a source column to each transaction field.
 
 - **WHEN** the example file has been loaded
 - **THEN** a section separate from the preview table shows one select per
-  transaction field (date, payee, notes, source id, and the amount fields for
-  the chosen layout), each listing the file's columns (by header name, or by
+  transaction field (date, payee, notes, transaction ID, and the amount fields
+  for the chosen layout), each listing the file's columns (by header name, or by
   column number and sample value when there is no header), and the user can also
   choose a date format and decimal separator
 

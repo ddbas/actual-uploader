@@ -115,7 +115,7 @@ function duplicateColumnErrors(t: Partial<CsvSource>): string[] {
     ["Date", t.dateColumn],
     ["Payee", t.payeeColumn],
     ["Notes", t.notesColumn],
-    ["Source id", t.importedIdColumn],
+    ["Transaction ID", t.importedIdColumn],
   ];
   if (a?.kind === "single") uses.push(["Amount", a.column]);
   else if (a?.kind === "split") {

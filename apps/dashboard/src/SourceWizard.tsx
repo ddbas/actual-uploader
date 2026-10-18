@@ -47,7 +47,7 @@ const FIELD_LABELS: Record<FieldKey, string> = {
   date: "Date",
   payee: "Payee",
   notes: "Notes",
-  importedId: "Source id",
+  importedId: "Transaction ID",
   amount: "Amount",
   debit: "Outflow",
   credit: "Inflow",
@@ -490,7 +490,7 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
                   <th>Date</th>
                   <th>Payee</th>
                   <th>Notes</th>
-                  <th>Source id</th>
+                  <th>Transaction ID</th>
                   {amountKind === "split" ? (
                     <>
                       <th>Outflow</th>

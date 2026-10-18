@@ -114,7 +114,7 @@ describe("SourcesTab", () => {
       "Date",
       "Payee",
       "Notes",
-      "Source id",
+      "Transaction ID",
       "Outflow",
       "Inflow",
     ]);
