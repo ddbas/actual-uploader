@@ -2,7 +2,10 @@
 
 - [x] 1.1 CSV parser, delimiter detection
 - [x] 1.2 Upload type model, validation, row mapping (date, amount parsing)
-- [x] 1.3 Unit tests
+- [x] 1.3 Flexible date parsing and multi-row date format detection
+- [x] 1.4 Amount layouts (single, split, in/out), flip, skipped lines
+- [x] 1.5 Mapping guess and column analysis
+- [x] 1.6 Unit tests
 
 ## 2. Server
 
@@ -12,5 +15,12 @@
 ## 3. Dashboard
 
 - [x] 3.1 "Upload Types" tab and list
-- [x] 3.2 Creation wizard with preview
-- [x] 3.3 Tests
+- [x] 3.2 Creation wizard: options, field-to-column mapping, parsed preview
+- [x] 3.3 Auto-mapping, column filtering, option naming, date format hints
+- [x] 3.4 Tests
+
+## 4. Follow-ups (not in this change)
+
+- [ ] 4.1 File encoding detection/selection
+- [ ] 4.2 UI for processing a statement with a saved upload type
+- [ ] 4.3 PDF upload types

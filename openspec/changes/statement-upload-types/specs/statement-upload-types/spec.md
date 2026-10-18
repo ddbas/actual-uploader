@@ -69,10 +69,23 @@ and assigning a source column to each transaction field.
   than the file's columns, immediately shows each sample row's values as
   selected by the current mapping
 
-#### Scenario: Split debit/credit amounts
+#### Scenario: Split outflow/inflow amounts
 
-- **WHEN** the institution reports amounts in separate debit and credit columns
-- **THEN** the user can choose "separate debit and credit columns" and pick both
+- **WHEN** the user checks "Split amount into separate inflow/outflow columns"
+- **THEN** the field selects offer "Outflow" and "Inflow" instead of "Amount",
+  both are required, and the preview shows separate Outflow and Inflow columns
+
+#### Scenario: Delimiter
+
+- **WHEN** an example file is loaded
+- **THEN** its delimiter (comma, semicolon, tab, pipe, or tilde) is detected and
+  pre-selected, and the user can change it
+
+#### Scenario: Date format labels use the file's separator
+
+- **WHEN** the date format select is shown and the sample date uses a separator
+- **THEN** the format options are labelled with that separator (e.g.
+  "DD/MM/YYYY")
 
 ### Requirement: Mapping Is Guessed From the Example File
 
@@ -87,6 +100,12 @@ user change any of it.
   "Debit" and "Credit"
 - **THEN** those columns are pre-assigned to date, payee, outflow and inflow,
   and the split amount layout is enabled
+
+#### Scenario: Decimal separator is guessed
+
+- **WHEN** the amount values use a decimal comma (e.g. "12,50") and none use a
+  decimal point
+- **THEN** the decimal separator is pre-set to comma
 
 #### Scenario: Date format is detected from all sample rows
 
@@ -128,7 +147,9 @@ marks money going out).
 ### Requirement: Required Fields Must Be Mapped Before Saving
 
 An upload type SHALL NOT be savable until it has a name and a source for every
-required transaction field: date and amount.
+required transaction field: the date, plus the amount fields of the chosen
+layout (amount; outflow and inflow; or amount and in/out column with an out
+value).
 
 #### Scenario: Save blocked while incomplete
 

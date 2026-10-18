@@ -9,12 +9,17 @@ tool must let users teach it how to read each kind of statement.
 
 - Add an "Upload Types" tab to the dashboard where users create, view, and
   delete "upload types" (e.g. "Desjardins checking & savings CSV").
-- Add a guided wizard: the user uploads an example CSV, says whether the first
-  row is a header, and maps CSV columns to Actual Budget transaction fields
-  (date, amount, and optionally payee, notes, and a source id). Amounts may come
-  from one signed column or from separate debit/credit columns. The user also
-  picks the date format and decimal separator. An upload type can only be saved
-  once every required field has a source.
+- Add a guided wizard modelled on Actual Budget's CSV importer: the user uploads
+  an example CSV; the wizard auto-detects the delimiter, header, columns, date
+  format and decimal separator; and the user adjusts a field-to-column mapping
+  (date, payee, notes, source id, and amounts). Amounts may be a single signed
+  column, separate outflow/inflow columns, or an amount column plus an in/out
+  column; amounts can be flipped; lines can be skipped at the start and end of
+  the file. Date format is detected across all sample rows, columns that cannot
+  supply a field (empty, or not date/amount-like) are not offered, and columns
+  are named by header plus a sample value. A preview table shows the parsed
+  transactions. An upload type can only be saved once every required field has a
+  source.
 - Persist saved upload types on the local server.
 - Add a server endpoint that processes a CSV statement with a saved upload type
   into `Transaction` objects (the existing Actual Budget-shaped type).
