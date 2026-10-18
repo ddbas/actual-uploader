@@ -3,14 +3,7 @@
  * codegen and scaffolds a registered crawler from it.
  */
 import { spawnSync } from "node:child_process";
-import {
-  existsSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -36,27 +29,20 @@ async function main(): Promise<number> {
 
   console.log(`\n${renderBanner()}\n`);
 
-  const tmp = mkdtempSync(join(tmpdir(), "crawler-generate-"));
-  const outputFile = join(tmp, "recording.js");
-  let recording = "";
-  try {
-    await record(url, outputFile);
-    if (existsSync(outputFile)) {
-      recording = readFileSync(outputFile, "utf8");
-    }
-  } finally {
-    rmSync(tmp, { recursive: true, force: true });
+  const { statements, secretsRedacted, endedInManual } = await record(url);
+  const { steps, warnings, recordedStepCount } = sanitize(statements);
+  if (secretsRedacted > 0) {
+    warnings.push(
+      `${secretsRedacted} password input(s) outside a manual section were replaced with a pause (values were never captured).`,
+    );
+  }
+  if (endedInManual) {
+    warnings.push(
+      "The recording ended while manual mode was on; everything after it was treated as manual.",
+    );
   }
 
-  const { steps, warnings, recordedStepCount } = sanitize(recording);
-
   if (recordedStepCount === 0) {
-    if (recording.trim() !== "" && steps.length === 0) {
-      console.error(
-        "Recording had no recognizable page steps (did the codegen output format change?). Nothing was written.",
-      );
-      return 1;
-    }
     console.log("Nothing was recorded; no crawler was created.");
     return 0;
   }

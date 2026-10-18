@@ -1,75 +1,87 @@
 /**
- * Records a browsing session using Playwright's recorder, in a browser we
- * launch ourselves so that (a) it uses the same low-detectability launch
- * options as generated crawlers and (b) we can inject a floating "manual
- * mode" toggle button, whose recorded click acts as the pause marker.
- *
- * NOTE: `BrowserContext._enableRecorder` is a private Playwright API (it is
- * what `playwright codegen` itself uses). The `playwright` version is pinned
- * in the lockfile; `sanitize()` fails loudly if the output format changes.
+ * Records a browsing session using only public Playwright APIs: a browser we
+ * launch ourselves, an init script (`scripts/recorder-page.js`) that observes
+ * real user events, and `exposeFunction` to report them. Statements are
+ * generated here; nothing typed during a manual section ever leaves the page.
  */
-import type { BrowserContext, Page } from "playwright";
+import { readFileSync } from "node:fs";
+import type { Browser, Page } from "playwright";
 import { launchBrowser } from "../src/browser.js";
-import { MANUAL_TOGGLE_TOKEN } from "./sanitize.js";
+import { PAUSE_STATEMENT } from "./sanitize.js";
 
-type RecorderContext = BrowserContext & {
-  _enableRecorder(params: Record<string, unknown>): Promise<void>;
-};
+const RECORDER_SCRIPT = readFileSync(
+  new URL("./recorder-page.js", import.meta.url),
+  "utf8",
+);
 
-/**
- * Init script run in every page: renders the toggle button inside a shadow
- * root. Kept as a plain string because bundlers inject helpers (e.g.
- * `__name`) into serialized functions that do not exist in the page.
- */
-const toggleButtonScript = (token: string) => `(() => {
-  if (window !== window.top) return;
-  const token = ${JSON.stringify(token)};
-  const install = async () => {
-    if (document.getElementById(token + "-host")) return;
-    const host = document.createElement("div");
-    host.id = token + "-host";
-    host.style.cssText =
-      "all:initial;position:fixed;right:16px;bottom:16px;z-index:2147483647";
-    const root = host.attachShadow({ mode: "open" });
-    const button = document.createElement("button");
-    button.id = token;
-    button.setAttribute("aria-label", token);
-    button.style.cssText =
-      "font:600 14px system-ui,sans-serif;color:#fff;border:0;border-radius:8px;padding:12px 16px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.4)";
-    const render = (manual) => {
-      button.textContent = manual
-        ? "\\u23F8 MANUAL MODE ON \\u2014 click when done"
-        : "\\u25CF Recording \\u2014 click to start manual mode";
-      button.style.background = manual ? "#c62828" : "#2e7d32";
-    };
-    render(await window.__crawlerGetState());
-    button.addEventListener("click", async () => {
-      render(await window.__crawlerToggle());
-    });
-    window.addEventListener("crawler-manual-state", (event) => {
-      render(event.detail);
-    });
-    root.appendChild(button);
-    document.documentElement.appendChild(host);
-  };
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", install);
-  } else {
-    install();
+export interface RecordedEvent {
+  action:
+    | "click"
+    | "check"
+    | "uncheck"
+    | "fill"
+    | "select"
+    | "press"
+    | "secret";
+  locator: string;
+  value?: string;
+}
+
+export interface RecordOptions {
+  /** Test hooks: supply a browser and/or drive the page instead of a human. */
+  launch?: () => Promise<Browser>;
+  drive?: (page: Page) => Promise<void>;
+}
+
+export interface RecordResult {
+  statements: string[];
+  /** Number of password-like entries replaced by a pause. */
+  secretsRedacted: number;
+  endedInManual: boolean;
+}
+
+export function toStatement(event: RecordedEvent): string | undefined {
+  const target = `page.${event.locator}`;
+  switch (event.action) {
+    case "click":
+      return `await ${target}.click();`;
+    case "check":
+      return `await ${target}.check();`;
+    case "uncheck":
+      return `await ${target}.uncheck();`;
+    case "fill":
+      return `await ${target}.fill(${JSON.stringify(event.value ?? "")});`;
+    case "select":
+      return `await ${target}.selectOption(${JSON.stringify(event.value ?? "")});`;
+    case "press":
+      return `await ${target}.press(${JSON.stringify(event.value ?? "")});`;
+    case "secret":
+      return PAUSE_STATEMENT;
   }
-})();`;
+}
 
 export async function record(
   url: string,
-  outputFile: string,
-  /** Test hook: drives the page instead of waiting for a human. */
-  drive?: (page: Page) => Promise<void>,
-): Promise<void> {
-  const browser = await launchBrowser();
-  const context = (await browser.newContext()) as RecorderContext;
+  options: RecordOptions = {},
+): Promise<RecordResult> {
+  const browser = await (options.launch ?? launchBrowser)();
+  const context = await browser.newContext();
 
+  const statements = [`await page.goto(${JSON.stringify(url)});`];
   let manual = false;
+  let secretsRedacted = 0;
   const pages = new Set<Page>();
+
+  const push = (statement: string) => {
+    if (
+      statement === PAUSE_STATEMENT &&
+      statements.at(-1) === PAUSE_STATEMENT
+    ) {
+      return;
+    }
+    statements.push(statement);
+  };
+
   const broadcast = async () => {
     await Promise.all(
       [...pages].map((page) =>
@@ -85,40 +97,53 @@ export async function record(
       ),
     );
   };
+
   await context.exposeFunction("__crawlerGetState", () => manual);
   await context.exposeFunction("__crawlerToggle", async () => {
     manual = !manual;
-    console.log(
-      manual
-        ? "Manual mode ON: nothing from here on is kept."
-        : "Manual mode OFF: recording resumes.",
-    );
+    if (manual) {
+      push(PAUSE_STATEMENT);
+      console.log("Manual mode ON: nothing from here on is kept.");
+    } else {
+      console.log("Manual mode OFF: recording resumes.");
+    }
     await broadcast();
     return manual;
   });
-  await context.addInitScript(toggleButtonScript(MANUAL_TOGGLE_TOKEN));
-  context.on("page", (page) => {
-    pages.add(page);
-    page.on("close", () => pages.delete(page));
+  await context.exposeFunction("__crawlerEmit", (event: RecordedEvent) => {
+    if (manual) {
+      return;
+    }
+    if (event.action === "secret") {
+      secretsRedacted += 1;
+    }
+    const statement = toStatement(event);
+    if (statement) {
+      push(statement);
+    }
   });
+  await context.addInitScript(RECORDER_SCRIPT);
 
   const closed = new Promise<void>((resolve) => {
     browser.on("disconnected", () => resolve());
   });
-
-  await context._enableRecorder({
-    language: "javascript",
-    launchOptions: { headless: false },
-    contextOptions: {},
-    mode: "recording",
-    outputFile,
-    handleSIGINT: false,
+  context.on("page", (page) => {
+    pages.add(page);
+    page.on("close", () => {
+      pages.delete(page);
+      if (pages.size === 0) {
+        browser.close().catch(() => {});
+      }
+    });
   });
+
   const page = await context.newPage();
   await page.goto(url);
-  if (drive) {
-    await drive(page);
-    await browser.close();
+  if (options.drive) {
+    await options.drive(page);
+    await page.close();
   }
   await closed;
+
+  return { statements, secretsRedacted, endedInManual: manual };
 }

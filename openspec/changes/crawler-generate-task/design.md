@@ -7,21 +7,18 @@ All tasks run through Mise.
 
 Research findings that shape this design:
 
-1. **Getting the generated code programmatically: yes.** `playwright codegen`
-   supports `-o, --output <file>` ("saves the generated script to a file") and
-   `--target <lang>`. The recorder rewrites that file as actions occur. The task
-   spawns the CLI, waits for the process to exit (closing the browser /
-   Inspector), and reads the file. The Playwright library has no public API that
-   returns recorded code; the recorder is only reachable via the CLI or private
-   `_enableRecorder`-style internals, which we avoid.
-2. **Marking a `page.pause()` step in codegen: no built-in way.** The recorder
-   offers no "insert pause" action.
-3. **Keyboard markers proved unreliable.** In theory the recorder captures
-   non-printable keys such as `F9`, but in practice the press was not picked up
-   for the developer (browser/OS function-key handling, e.g. macOS media keys,
-   and page key handling). The marker therefore uses a mouse click on an
-   injected UI element, which the recorder records reliably (verified).
-4. **Bank sites deny automated browsers.** Playwright's default launch passes
+1. **Playwright has no public API that returns recorded code.** The
+   `playwright codegen` CLI is public but cannot be customized (no launch
+   options, no UI injection, no way to mark a manual step), and the recorder
+   inside the library is only reachable through private internals
+   (`_enableRecorder`), which we do not use. The task therefore ships its own
+   small recorder built only from public APIs: `chromium.launch`,
+   `context.addInitScript`, `context.exposeFunction`, and ordinary page events.
+2. **Marking a `page.pause()` step in codegen: no built-in way**, and a keyboard
+   marker (`F9`) was not picked up for the developer (browser/OS function-key
+   handling). The marker is therefore a click on an injected UI element, which
+   our own recorder controls.
+3. **Bank sites deny automated browsers.** Playwright's default launch passes
    `--enable-automation`, sets `navigator.webdriver`, and `playwright codegen`
    offers no way to remove these; the developer saw "access denied" after login.
    Mitigations (not a guarantee): launch the user's installed Google Chrome
@@ -51,17 +48,16 @@ browser itself and injects, into every top-level page, a button (in an open
 shadow root, fixed bottom-right, `aria-label`/id `crawler-manual-toggle`) that
 shows red "MANUAL MODE ON" or green "Recording". The developer clicks it to
 begin a manual section, does the manual work (typing credentials, solving MFA,
-...), then clicks it again. The recorder records each click as a statement
-naming `crawler-manual-toggle`; post-processing drops every statement between
-two such statements and emits one `await page.pause();`. This beats marking
-individual fields: the recorded submit click or navigation inside the section
-would otherwise replay after the human already did it, and typed values never
-reach the output. An unmatched start marker treats the rest of the recording as
-manual, with a warning. Button state is held by the task process and pushed to
-pages so it survives navigations. Alternatives rejected: a function-key marker
-(not reliably recorded, see finding 3), sentinel text typed into a field (only
-works in editable fields), hand-editing afterwards (easy to forget), and only
-heuristic redaction (misses usernames and one-time codes).
+...), then clicks it again. The toggle emits one `await page.pause();` when
+switched on and the recorder ignores events until it is switched off. This beats
+marking individual fields: the recorded submit click or navigation inside the
+section would otherwise replay after the human already did it, and typed values
+never reach the output. An unmatched start marker treats the rest of the
+recording as manual, with a warning. Button state is held by the task process
+and pushed to pages so it survives navigations. Alternatives rejected: a
+function-key marker (not reliably recorded, see finding 3), sentinel text typed
+into a field (only works in editable fields), hand-editing afterwards (easy to
+forget), and only heuristic redaction (misses usernames and one-time codes).
 
 **Heuristic redaction as a safety net.** `fill` statements whose target matches
 a pattern list (`password`, `passcode`, `mot de passe`, `pin`, `nip`, ...)
@@ -69,16 +65,22 @@ become pauses even without the toggle, with a warning. Keeps real passwords out
 of memory-to-disk paths. Usernames are not auto-redacted (too many false
 positives); users mark them with the toggle button.
 
-**Launch the browser ourselves and enable the recorder on its context.** The
-task launches the browser via `launchBrowser()` and calls
-`BrowserContext._enableRecorder({ mode: "recording", outputFile, ... })`, the
-same private call `playwright codegen` makes. This is the only way to both
-control launch options and inject the toggle button (the CLI offers neither).
-Trade-off: it relies on a private API; the `playwright` version is pinned in the
-lockfile, `sanitize()` fails loudly on unrecognizable output, and unit tests
-cover the format. The recording is written to a temp file, read after the
-browser disconnects, and deleted. Injected scripts are plain strings (bundlers
-inject helpers like `__name` into serialized functions, which break in-page).
+**Own recorder built on public APIs.** The task launches the browser via
+`launchBrowser()`, injects `scripts/recorder-page.js` with `addInitScript`, and
+receives events through `exposeFunction`. The page script listens (capture
+phase) for trusted `click`, `change` and Enter `keydown` events and emits
+`click`/`check`/`uncheck`/`fill`/`selectOption`/`press("Enter")` actions with a
+generated locator (test id, label, placeholder, role+name, text, id, then a CSS
+path; `.nth(i)` when ambiguous). Only the top frame is recorded (iframes and
+popups are not; a limitation). Statements are generated in Node. Because the
+page script and the Node side both drop events while manual mode is on, typed
+values from manual sections never leave the page; `type=password` inputs are
+reported without their value and become a pause; no raw recording is written to
+disk. The toggle click is not recorded; the toggle itself emits the pause.
+Trade-off: locators are less refined than codegen's, so the developer should
+review the generated file. Injected scripts are shipped as a plain `.js` file
+(bundlers inject helpers like `__name` into serialized functions, which break
+in-page).
 
 **Script is TypeScript in `packages/crawlers/scripts/`,** alongside the existing
 `smoke-mock.ts`, invoked by the Mise task. Pure transformation
@@ -96,13 +98,13 @@ registration is done by inserting an import and `registerCrawler` line.
 
 ## Risks / Trade-offs
 
-- [Recorder output format changes between Playwright versions] → Transform
-  matches on statement patterns narrowly, is covered by unit tests with fixture
-  recordings, and the task fails loudly if the output has no recognizable page
-  steps.
+- [Our recorder produces coarser locators than codegen and misses iframes and
+  popups] → Unit/integration tests against a real browser; the generated file is
+  meant to be reviewed; manual sections cover the common iframe logins.
 - [Heuristic redaction misses a credential field with an unusual name] →
-  Document the marker key as the primary mechanism; warn the user to review the
-  generated file; keep the raw recording only in a temp file that is deleted.
+  `type=password` inputs are never captured; manual mode is the primary
+  mechanism; warn the user to review the generated file; no raw recording is
+  persisted.
 - [The injected button could be hidden or blocked by a page's own overlay or
   CSP] → It uses the maximum z-index in a shadow root and is added through the
   init-script mechanism, which is not subject to page CSP.
