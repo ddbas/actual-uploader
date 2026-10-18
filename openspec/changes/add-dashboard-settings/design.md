@@ -28,8 +28,10 @@ proposal.md for motivation.
 - **Fields**: Actual's API needs server URL, server password, and budget Sync
   ID; an encryption password is needed only for E2EE budgets, so it is optional.
 - **`ActualSettingsStore`** mirrors `SourceStore` (optional file path, JSON,
-  in-memory fallback), written with mode 0600. Alternative: OS keychain —
-  deferred; adds native dependencies.
+  in-memory fallback) at `<dataDir>/actual-settings.json`, using the same data
+  directory as `sources.json` (temporary storage approach, kept consistent until
+  a permanent solution exists), written with mode 0600. Alternative: OS keychain
+  — deferred; adds native dependencies.
 - **Write-only secrets**: GET returns booleans; PUT treats an omitted/undefined
   password as "keep". Clearing the encryption password is done by sending an
   empty string.

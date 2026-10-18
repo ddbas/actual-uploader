@@ -7,14 +7,24 @@ connection settings through the local server.
 
 ### Requirement: Actual Settings Are Persisted by the Server
 
-The server SHALL persist Actual connection settings to a local JSON file
-alongside other server data so they survive restarts, and SHALL work in memory
-only when no file path is configured.
+The server SHALL persist Actual connection settings to `actual-settings.json` in
+the same data directory used for sources, so they survive restarts. The data
+directory SHALL be `ACCOUNT_CRAWLER_DATA_DIR` when set, otherwise
+`~/.account-crawler`. When no file path is configured (e.g. in tests) the server
+SHALL keep settings in memory only. This file-based storage is a temporary
+approach and all persisted server data SHALL follow it until a permanent storage
+solution replaces it.
 
 #### Scenario: Settings survive restart
 
-- **WHEN** settings are saved and the server is restarted with the same file
+- **WHEN** settings are saved and the server is restarted with the same data
+  directory
 - **THEN** the saved settings are available again
+
+#### Scenario: Default data directory
+
+- **WHEN** `ACCOUNT_CRAWLER_DATA_DIR` is not set
+- **THEN** settings are stored in `~/.account-crawler/actual-settings.json`
 
 ### Requirement: Actual Settings REST API
 
