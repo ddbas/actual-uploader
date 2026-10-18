@@ -7,7 +7,7 @@
     "format": "turbo run //#format:biome //#format:prettier",
     "format:biome": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true .",
     "format:prettier": "prettier --write \"**/*.md\"",
-    "dev": "turbo run dev --parallel",
+    "dev": "turbo run dev",
     "build": "turbo run build",
     "test": "turbo run test",
     "check-types": "turbo run check-types"
