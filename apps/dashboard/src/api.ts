@@ -52,3 +52,17 @@ export async function processStatement(
   }
   return res.json();
 }
+
+/** An Actual Budget account: `id` is sent as the transaction's account. */
+export interface Account {
+  id: string;
+  name: string;
+}
+
+export async function fetchAccounts(): Promise<Account[]> {
+  const res = await fetch("/api/accounts");
+  if (!res.ok) {
+    throw new Error("Failed to fetch accounts");
+  }
+  return res.json();
+}

@@ -31,6 +31,21 @@ afterEach(() => {
   for (const s of servers.splice(0)) s.close();
 });
 
+describe("account API", () => {
+  it("lists accounts with an id and a display name", async () => {
+    const base = await start();
+    const accounts = (await (await fetch(`${base}/api/accounts`)).json()) as {
+      id: string;
+      name: string;
+    }[];
+    expect(accounts.length).toBeGreaterThan(0);
+    expect(accounts[0]).toEqual({
+      id: expect.any(String),
+      name: expect.any(String),
+    });
+  });
+});
+
 describe("source API", () => {
   it("rejects invalid sources", async () => {
     const base = await start();

@@ -22,6 +22,11 @@ beforeEach(() => {
           }),
         );
       }
+      if (String(url).endsWith("/api/accounts")) {
+        return new Response(
+          JSON.stringify([{ id: "acc-1", name: "Chequing" }]),
+        );
+      }
       return new Response(
         JSON.stringify([{ id: "s1", name: "Desjardins", format: "csv" }]),
       );
@@ -38,7 +43,7 @@ describe("UploadTab", () => {
     const user = userEvent.setup();
     render(<UploadTab />);
     await user.selectOptions(await screen.findByLabelText("Source"), "s1");
-    await user.type(screen.getByLabelText("Account"), "Chequing");
+    await user.selectOptions(screen.getByLabelText("Account"), "acc-1");
     await user.upload(
       screen.getByLabelText("Statement files"),
       new File(["x"], "a.csv", { type: "text/csv" }),

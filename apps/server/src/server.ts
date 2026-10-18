@@ -2,6 +2,7 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer as createHttpServer, type Server } from "node:http";
 import { extname, join } from "node:path";
 import { processCsv, type SourceDraft, validateSource } from "statement-core";
+import { listAccounts } from "./accounts.js";
 import { SourceStore } from "./sourceStore.js";
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -86,6 +87,11 @@ export function createServer(
       handleSources(req, res, url.pathname, sources).catch(() => {
         sendJson(res, 500, { error: "Internal error" });
       });
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/accounts") {
+      sendJson(res, 200, listAccounts());
       return;
     }
 

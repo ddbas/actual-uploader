@@ -1,6 +1,12 @@
 import { type FormEvent, useEffect, useState } from "react";
 import type { Source } from "statement-core";
-import { fetchSources, type ProcessedFile, processStatement } from "./api.js";
+import {
+  type Account,
+  fetchAccounts,
+  fetchSources,
+  type ProcessedFile,
+  processStatement,
+} from "./api.js";
 import type { Transaction } from "./types.js";
 
 interface FileResult extends ProcessedFile {
@@ -13,6 +19,7 @@ const formatAmount = (cents: number | undefined): string =>
 export function UploadTab() {
   const [sources, setSources] = useState<Source[] | null>(null);
   const [sourceId, setSourceId] = useState("");
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [account, setAccount] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [results, setResults] = useState<FileResult[] | null>(null);
@@ -24,12 +31,15 @@ export function UploadTab() {
     fetchSources()
       .then(setSources)
       .catch(() => setSources([]));
+    fetchAccounts()
+      .then(setAccounts)
+      .catch(() => setAccounts([]));
   }, []);
 
   const transactions: Transaction[] =
     results?.flatMap((r) => r.transactions) ?? [];
   const canProcess =
-    sourceId !== "" && account.trim() !== "" && files.length > 0 && !processing;
+    sourceId !== "" && account !== "" && files.length > 0 && !processing;
 
   async function onProcess(e: FormEvent) {
     e.preventDefault();
@@ -41,7 +51,7 @@ export function UploadTab() {
       for (const file of files) {
         const processed = await processStatement(
           sourceId,
-          account.trim(),
+          account,
           await file.text(),
         );
         out.push({ fileName: file.name, ...processed });
@@ -160,10 +170,17 @@ export function UploadTab() {
           <p>
             <label>
               Account{" "}
-              <input
+              <select
                 value={account}
                 onChange={(e) => setAccount(e.target.value)}
-              />
+              >
+                <option value="">Choose an account…</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
             </label>
           </p>
           <p>
