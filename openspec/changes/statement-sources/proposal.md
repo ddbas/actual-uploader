@@ -7,8 +7,8 @@ tool must let users teach it how to read each kind of statement.
 
 ## What Changes
 
-- Add an "Upload Types" tab to the dashboard where users create, view, and
-  delete "upload types" (e.g. "Desjardins checking & savings CSV").
+- Add an "Sources" tab to the dashboard where users create, view, and delete
+  "sources" (e.g. "Desjardins checking & savings CSV").
 - Add a guided wizard modelled on Actual Budget's CSV importer: the user uploads
   an example CSV; the wizard auto-detects the delimiter, header, columns, date
   format and decimal separator; and the user adjusts a field-to-column mapping
@@ -19,11 +19,11 @@ tool must let users teach it how to read each kind of statement.
   say (e.g. merchant-like text, amounts with cents). Date format is detected
   across all sample rows, columns that cannot supply a field (empty, or not
   date/amount-like) are not offered, and columns are named by header plus a
-  sample value. A preview table shows the parsed transactions. An upload type
-  can only be saved once every required field has a source.
-- Persist saved upload types on the local server.
-- Add a server endpoint that processes a CSV statement with a saved upload type
-  into `Transaction` objects (the existing Actual Budget-shaped type).
+  sample value. A preview table shows the parsed transactions. A source can only
+  be saved once every required field is mapped to a column.
+- Persist saved sources on the local server.
+- Add a server endpoint that processes a CSV statement with a saved source into
+  `Transaction` objects (the existing Actual Budget-shaped type).
 - CSV is the only supported file format for now; the model is extensible to PDF.
 
 ## Non-Goals
@@ -36,12 +36,12 @@ tool must let users teach it how to read each kind of statement.
 
 ### New Capabilities
 
-- `statement-upload-types`: functional requirements for the dashboard tab and
-  wizard that define upload types.
-- `statement-upload-types-technical`: storage, API, and parsing requirements.
+- `statement-sources`: functional requirements for the dashboard tab and wizard
+  that define sources.
+- `statement-sources-technical`: storage, API, and parsing requirements.
 
 ## Impact
 
 - New package `statement-core` (pure TS: CSV parsing, mapping, validation).
-- `apps/server`: upload-type store and REST endpoints.
+- `apps/server`: source store and REST endpoints.
 - `apps/dashboard`: new tab and wizard.

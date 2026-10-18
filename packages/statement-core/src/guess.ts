@@ -3,7 +3,7 @@ import {
   type DateFormat,
   detectDateFormats,
   type RowWindow,
-} from "./uploadType.js";
+} from "./source.js";
 
 export type FieldKey =
   | "date"

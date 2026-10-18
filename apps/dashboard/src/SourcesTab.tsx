@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import type { UploadType, UploadTypeDraft } from "statement-core";
-import { createUploadType, deleteUploadType, fetchUploadTypes } from "./api.js";
-import { UploadTypeWizard } from "./UploadTypeWizard.js";
+import type { Source, SourceDraft } from "statement-core";
+import { createSource, deleteSource, fetchSources } from "./api.js";
+import { SourceWizard } from "./SourceWizard.js";
 
-export function UploadTypesTab() {
-  const [types, setTypes] = useState<UploadType[]>([]);
+export function SourcesTab() {
+  const [types, setTypes] = useState<Source[]>([]);
   const [creating, setCreating] = useState(false);
 
   const refresh = useCallback(() => {
-    fetchUploadTypes()
+    fetchSources()
       .then(setTypes)
       .catch(() => setTypes([]));
   }, []);
@@ -17,10 +17,10 @@ export function UploadTypesTab() {
 
   if (creating) {
     return (
-      <UploadTypeWizard
+      <SourceWizard
         onCancel={() => setCreating(false)}
-        onSave={async (draft: UploadTypeDraft) => {
-          await createUploadType(draft);
+        onSave={async (draft: SourceDraft) => {
+          await createSource(draft);
           setCreating(false);
           refresh();
         }}
@@ -29,12 +29,12 @@ export function UploadTypesTab() {
   }
 
   return (
-    <section aria-label="Upload Types">
+    <section aria-label="Sources">
       <button type="button" onClick={() => setCreating(true)}>
-        New upload type
+        New source
       </button>
       {types.length === 0 ? (
-        <p>No upload types yet. Create one to start importing statements.</p>
+        <p>No sources yet. Create one to start importing statements.</p>
       ) : (
         <ul className="crawler-list">
           {types.map((t) => (
@@ -48,7 +48,7 @@ export function UploadTypesTab() {
               <button
                 type="button"
                 aria-label={`Delete ${t.name}`}
-                onClick={() => deleteUploadType(t.id).then(refresh)}
+                onClick={() => deleteSource(t.id).then(refresh)}
               >
                 Delete
               </button>

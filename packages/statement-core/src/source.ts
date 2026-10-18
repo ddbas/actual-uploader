@@ -25,7 +25,7 @@ export type AmountSource =
     };
 
 /** Describes how to read one institution's CSV statements. */
-export interface CsvUploadType {
+export interface CsvSource {
   id: string;
   name: string;
   format: "csv";
@@ -48,17 +48,17 @@ export interface CsvUploadType {
 }
 
 /** Union so other formats (e.g. PDF) can be added later. */
-export type UploadType = CsvUploadType;
+export type Source = CsvSource;
 
-export type UploadTypeDraft = Omit<CsvUploadType, "id">;
+export type SourceDraft = Omit<CsvSource, "id">;
 
 const isIndex = (v: unknown): v is number =>
   typeof v === "number" && Number.isInteger(v) && v >= 0;
 
 /** Returns human-readable problems; an empty array means the type is valid. */
-export function validateUploadType(input: unknown): string[] {
+export function validateSource(input: unknown): string[] {
   const errors: string[] = [];
-  const t = (input ?? {}) as Partial<CsvUploadType>;
+  const t = (input ?? {}) as Partial<CsvSource>;
   if (typeof t.name !== "string" || t.name.trim() === "") {
     errors.push("Name is required");
   }
@@ -259,10 +259,7 @@ export interface InterpretedRow {
 }
 
 /** Reads just the date and amount of a row (used by previews and mapping). */
-export function interpretRow(
-  type: CsvUploadType,
-  row: string[],
-): InterpretedRow {
+export function interpretRow(type: CsvSource, row: string[]): InterpretedRow {
   const date = parseDate(cell(row, type.dateColumn), type.dateFormat);
   const sep = type.decimalSeparator;
   const a = type.amount;
@@ -289,7 +286,7 @@ export function interpretRow(
 
 /** Maps a single parsed row to a transaction, or an error message. */
 export function mapRow(
-  type: CsvUploadType,
+  type: CsvSource,
   row: string[],
   account: string,
 ): Transaction | string {
@@ -319,7 +316,7 @@ export interface RowWindow {
 
 /** Applies skipped lines and the header setting to parsed rows. */
 export function windowRows(
-  type: Pick<CsvUploadType, "hasHeader" | "skipStartLines" | "skipEndLines">,
+  type: Pick<CsvSource, "hasHeader" | "skipStartLines" | "skipEndLines">,
   rows: string[][],
 ): RowWindow {
   const start = type.skipStartLines ?? 0;
@@ -335,9 +332,9 @@ export function windowRows(
   return { header, data: kept, offset };
 }
 
-/** Processes CSV text into transactions using an upload type. */
+/** Processes CSV text into transactions using a source. */
 export function processCsv(
-  type: CsvUploadType,
+  type: CsvSource,
   text: string,
   account: string,
 ): ProcessResult {

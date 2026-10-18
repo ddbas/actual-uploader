@@ -7,7 +7,7 @@ import "crawlers";
 import { getCrawlers } from "crawler-core";
 import open from "open";
 import { createServer } from "./server.js";
-import { UploadTypeStore } from "./uploadTypeStore.js";
+import { SourceStore } from "./sourceStore.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -17,7 +17,7 @@ async function main() {
     process.env.ACCOUNT_CRAWLER_DATA_DIR ?? join(homedir(), ".account-crawler");
   const { server } = createServer({
     crawlers: getCrawlers(),
-    uploadTypes: new UploadTypeStore(join(dataDir, "upload-types.json")),
+    sources: new SourceStore(join(dataDir, "sources.json")),
     staticDir: existsSync(staticDir) ? staticDir : undefined,
   });
 

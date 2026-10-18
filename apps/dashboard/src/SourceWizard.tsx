@@ -9,13 +9,13 @@ import {
   guessMapping,
   interpretRow,
   parseCsv,
-  type UploadTypeDraft,
-  validateUploadType,
+  type SourceDraft,
+  validateSource,
   windowRows,
 } from "statement-core";
 
-export interface UploadTypeWizardProps {
-  onSave: (draft: UploadTypeDraft) => Promise<void>;
+export interface SourceWizardProps {
+  onSave: (draft: SourceDraft) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -62,7 +62,7 @@ const REQUIRED_FIELDS: FieldKey[] = [
   "inOut",
 ];
 
-export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
+export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
   const [name, setName] = useState("");
   const [fileText, setFileText] = useState<string | null>(null);
   const [delimiter, setDelimiter] = useState(",");
@@ -174,7 +174,7 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
     importedIdColumn: columnOf("importedId"),
   };
   const errors = fileText === null ? ["Upload an example file"] : [];
-  errors.push(...validateUploadType(draft));
+  errors.push(...validateSource(draft));
   const valid = errors.length === 0;
 
   function assign(field: FieldKey, column: number | undefined) {
@@ -198,7 +198,7 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
   async function handleSave() {
     setSaveError(null);
     try {
-      await onSave(draft as UploadTypeDraft);
+      await onSave(draft as SourceDraft);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : "Failed to save");
     }
@@ -275,8 +275,8 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
   }
 
   return (
-    <section aria-label="New upload type" className="wizard">
-      <h2>New upload type</h2>
+    <section aria-label="New source" className="wizard">
+      <h2>New source</h2>
       <label className="field">
         <span>Name</span>
         <input
@@ -511,7 +511,7 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
               </thead>
               <tbody>
                 {dataRows.slice(0, PREVIEW_ROWS).map((row, r) => {
-                  const t = draft as unknown as UploadTypeDraft & {
+                  const t = draft as unknown as SourceDraft & {
                     id: string;
                   };
                   const { date, amount } = interpretRow(t, row);
@@ -585,7 +585,7 @@ export function UploadTypeWizard({ onSave, onCancel }: UploadTypeWizardProps) {
           disabled={!valid}
           onClick={() => void handleSave()}
         >
-          Save upload type
+          Save source
         </button>
         <button type="button" onClick={onCancel}>
           Cancel

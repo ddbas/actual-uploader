@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { fetchCrawlers, runAllCrawlers, runCrawler } from "./api.js";
 import { HomeTab } from "./HomeTab.js";
 import { ResultsTab } from "./ResultsTab.js";
+import { SourcesTab } from "./SourcesTab.js";
 import type { CrawlerSummary } from "./serverTypes.js";
-import { UploadTypesTab } from "./UploadTypesTab.js";
 import { useCrawlerEvents } from "./useCrawlerEvents.js";
 
-type Tab = "home" | "results" | "upload-types";
+type Tab = "home" | "results" | "sources";
 
 export function App() {
   const [crawlers, setCrawlers] = useState<CrawlerSummary[]>([]);
@@ -33,10 +33,10 @@ export function App() {
         <button
           type="button"
           role="tab"
-          aria-selected={tab === "upload-types"}
-          onClick={() => setTab("upload-types")}
+          aria-selected={tab === "sources"}
+          onClick={() => setTab("sources")}
         >
-          Upload Types
+          Sources
         </button>
         {hasAnyCompleted ? (
           <button
@@ -49,8 +49,8 @@ export function App() {
           </button>
         ) : null}
       </div>
-      {tab === "upload-types" ? (
-        <UploadTypesTab />
+      {tab === "sources" ? (
+        <SourcesTab />
       ) : tab === "home" || !hasAnyCompleted ? (
         <HomeTab
           crawlers={crawlers}

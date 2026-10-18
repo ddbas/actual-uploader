@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import type { UploadType, UploadTypeDraft } from "statement-core";
+import type { Source, SourceDraft } from "statement-core";
 
-/** Stores upload types, optionally persisted to a JSON file. */
-export class UploadTypeStore {
-  private types: UploadType[] = [];
+/** Stores sources, optionally persisted to a JSON file. */
+export class SourceStore {
+  private types: Source[] = [];
 
   constructor(private readonly filePath?: string) {
     if (filePath && existsSync(filePath)) {
@@ -13,16 +13,16 @@ export class UploadTypeStore {
     }
   }
 
-  list(): UploadType[] {
+  list(): Source[] {
     return [...this.types];
   }
 
-  get(id: string): UploadType | undefined {
+  get(id: string): Source | undefined {
     return this.types.find((t) => t.id === id);
   }
 
-  add(draft: UploadTypeDraft): UploadType {
-    const type: UploadType = { ...draft, id: randomUUID() };
+  add(draft: SourceDraft): Source {
+    const type: Source = { ...draft, id: randomUUID() };
     this.types.push(type);
     this.save();
     return type;

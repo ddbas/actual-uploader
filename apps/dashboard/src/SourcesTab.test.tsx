@@ -7,7 +7,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { UploadTypesTab } from "./UploadTypesTab.js";
+import { SourcesTab } from "./SourcesTab.js";
 
 const CSV =
   "Date,Description,Debit,Credit\n2024-01-05,Coffee,4.50,\n2024-01-06,Pay,,100.00\n";
@@ -37,21 +37,21 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("UploadTypesTab", () => {
+describe("SourcesTab", () => {
   it("shows an empty state and lists existing types", async () => {
-    render(<UploadTypesTab />);
-    expect(await screen.findByText(/No upload types yet/)).toBeTruthy();
+    render(<SourcesTab />);
+    expect(await screen.findByText(/No sources yet/)).toBeTruthy();
     cleanup();
     existing = [{ id: "1", name: "Desjardins", format: "csv" }];
-    render(<UploadTypesTab />);
+    render(<SourcesTab />);
     expect(await screen.findByText("Desjardins")).toBeTruthy();
     expect(screen.getByText("CSV")).toBeTruthy();
   });
 
   async function openWizard(csv: string) {
     const user = userEvent.setup();
-    render(<UploadTypesTab />);
-    await user.click(await screen.findByText("New upload type"));
+    render(<SourcesTab />);
+    await user.click(await screen.findByText("New source"));
     await user.type(screen.getByLabelText("Name"), "Desjardins");
     await user.upload(
       screen.getByLabelText("Example CSV file"),
@@ -74,7 +74,7 @@ describe("UploadTypesTab", () => {
 
   it("guesses the mapping, previews parsed values and saves", async () => {
     const user = await openWizard(CSV);
-    const save = screen.getByRole("button", { name: "Save upload type" });
+    const save = screen.getByRole("button", { name: "Save source" });
 
     // guessed from header names, which also selects the split layout
     expect(
@@ -153,7 +153,7 @@ describe("UploadTypesTab", () => {
 
   it("blocks saving until required fields are mapped", async () => {
     const user = await openWizard("foo,bar,baz\n2024-01-05,hello,12\n");
-    const save = screen.getByRole("button", { name: "Save upload type" });
+    const save = screen.getByRole("button", { name: "Save source" });
     expect(selectedOf("Date")).toBe("foo: 2024-01-05");
     expect(selectedOf("Amount")).toBe("baz: 12");
     expect((save as HTMLButtonElement).disabled).toBe(false);

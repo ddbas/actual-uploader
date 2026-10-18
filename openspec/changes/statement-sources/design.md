@@ -5,8 +5,8 @@
   and mapping code so previews match real results.
 - **Columns are referenced by zero-based index**, which works whether or not a
   header exists. Header names are only used for display.
-- **Upload type model** is a discriminated union on `format` (`"csv"` now) so
-  PDF types can be added later without migration.
+- **Source model** is a discriminated union on `format` (`"csv"` now) so PDF
+  types can be added later without migration.
 - **Amount** is `{ kind: "single", column }`,
   `{ kind: "split", debitColumn, creditColumn }` (shown as outflow/inflow), or
   `{ kind: "inOut", column, inOutColumn, outValue }`; an optional `flipAmount`
@@ -23,7 +23,7 @@
   row; row numbers in errors refer to the original file.
 - **Known limitation:** files are read as UTF-8; other encodings (as Actual
   supports) are not yet handled.
-- **Account** is not part of an upload type; it is supplied when processing.
+- **Account** is not part of a source; it is supplied when processing.
 - **Persistence** is a JSON file in a data directory
   (`ACCOUNT_CRAWLER_DATA_DIR`, default `~/.account-crawler`). Simple, local,
   inspectable; swappable for a database later.

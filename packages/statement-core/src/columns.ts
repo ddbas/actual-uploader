@@ -1,4 +1,4 @@
-import { detectDateFormats, looksLikeAmount } from "./uploadType.js";
+import { detectDateFormats, looksLikeAmount } from "./source.js";
 
 export interface ColumnInfo {
   index: number;

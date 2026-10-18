@@ -1,26 +1,26 @@
 ## ADDED Requirements
 
-### Requirement: Upload Types Tab
+### Requirement: Sources Tab
 
-The dashboard SHALL present an "Upload Types" tab, always visible, listing every
-saved upload type by name and format, with a button to create a new one and a
-control to delete an existing one.
+The dashboard SHALL present an "Sources" tab, always visible, listing every
+saved source by name and format, with a button to create a new one and a control
+to delete an existing one.
 
-#### Scenario: Tab lists saved upload types
+#### Scenario: Tab lists saved sources
 
-- **WHEN** the user opens the "Upload Types" tab
-- **THEN** each saved upload type is listed with its name and file format
+- **WHEN** the user opens the "Sources" tab
+- **THEN** each saved source is listed with its name and file format
 
 #### Scenario: Empty state
 
-- **WHEN** no upload types exist
+- **WHEN** no sources exist
 - **THEN** the tab shows a message inviting the user to create one
 
-### Requirement: Guided CSV Upload Type Creation
+### Requirement: Guided CSV Source Creation
 
-The dashboard SHALL guide the user through creating a CSV upload type: naming
-it, uploading an example CSV file, indicating whether the first row is a header,
-and assigning a source column to each transaction field.
+The dashboard SHALL guide the user through creating a CSV source: naming it,
+uploading an example CSV file, indicating whether the first row is a header, and
+assigning a source column to each transaction field.
 
 #### Scenario: Example file preview
 
@@ -160,7 +160,7 @@ marks money going out).
 
 ### Requirement: Required Fields Must Be Mapped Before Saving
 
-An upload type SHALL NOT be savable until it has a name and a source for every
+A source SHALL NOT be savable until it has a name and a column for every
 required transaction field: the date, plus the amount fields of the chosen
 layout (amount; outflow and inflow; or amount and in/out column with an out
 value).
@@ -173,7 +173,7 @@ value).
 #### Scenario: Save succeeds when complete
 
 - **WHEN** all required fields are mapped and the user saves
-- **THEN** the upload type appears in the list and is available for processing
+- **THEN** the source appears in the list and is available for processing
   statements
 
 ### Requirement: Mapped Preview of Transactions

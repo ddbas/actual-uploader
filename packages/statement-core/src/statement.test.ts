@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   analyzeColumns,
-  type CsvUploadType,
+  type CsvSource,
   detectDateFormat,
   detectDateFormats,
   detectDelimiter,
@@ -11,11 +11,11 @@ import {
   parseCsv,
   parseDate,
   processCsv,
-  validateUploadType,
+  validateSource,
   windowRows,
 } from "./index.js";
 
-const base: Omit<CsvUploadType, "id"> = {
+const base: Omit<CsvSource, "id"> = {
   name: "Test",
   format: "csv",
   delimiter: ",",
@@ -67,12 +67,12 @@ describe("parsers", () => {
   });
 });
 
-describe("validateUploadType", () => {
+describe("validateSource", () => {
   it("accepts a complete type", () => {
-    expect(validateUploadType(base)).toEqual([]);
+    expect(validateSource(base)).toEqual([]);
   });
   it("requires name, date and amount", () => {
-    const errs = validateUploadType({
+    const errs = validateSource({
       ...base,
       name: " ",
       dateColumn: undefined,
@@ -127,7 +127,7 @@ describe("processCsv", () => {
 });
 
 describe("amount options and skipped lines", () => {
-  const t: CsvUploadType = { ...base, id: "1", hasHeader: false };
+  const t: CsvSource = { ...base, id: "1", hasHeader: false };
   it("supports an in/out column", () => {
     const r = processCsv(
       {
@@ -159,7 +159,7 @@ describe("amount options and skipped lines", () => {
     expect(windowRows({ hasHeader: false }, [["a"]]).data).toEqual([["a"]]);
   });
   it("validates in/out and skip values", () => {
-    const errs = validateUploadType({
+    const errs = validateSource({
       ...base,
       amount: { kind: "inOut", column: 1 },
       skipStartLines: -1,

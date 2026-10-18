@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { createServer } from "./server.js";
-import { UploadTypeStore } from "./uploadTypeStore.js";
+import { SourceStore } from "./sourceStore.js";
 
 const valid = {
   name: "Desjardins",
@@ -18,8 +18,8 @@ const valid = {
 };
 
 const servers: ReturnType<typeof createServer>["server"][] = [];
-async function start(store?: UploadTypeStore) {
-  const { server } = createServer({ crawlers: [], uploadTypes: store });
+async function start(store?: SourceStore) {
+  const { server } = createServer({ crawlers: [], sources: store });
   servers.push(server);
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   return `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -31,26 +31,24 @@ afterEach(() => {
   for (const s of servers.splice(0)) s.close();
 });
 
-describe("upload type API", () => {
-  it("rejects invalid upload types", async () => {
+describe("source API", () => {
+  it("rejects invalid sources", async () => {
     const base = await start();
     const { amount: _a, ...noAmount } = valid;
-    const res = await post(`${base}/api/upload-types`, noAmount);
+    const res = await post(`${base}/api/sources`, noAmount);
     expect(res.status).toBe(400);
-    expect(await (await fetch(`${base}/api/upload-types`)).json()).toEqual([]);
+    expect(await (await fetch(`${base}/api/sources`)).json()).toEqual([]);
   });
 
   it("creates, lists, processes and deletes", async () => {
     const base = await start();
     const created = (await (
-      await post(`${base}/api/upload-types`, valid)
+      await post(`${base}/api/sources`, valid)
     ).json()) as { id: string };
     expect(created.id).toBeTruthy();
-    expect(await (await fetch(`${base}/api/upload-types`)).json()).toHaveLength(
-      1,
-    );
+    expect(await (await fetch(`${base}/api/sources`)).json()).toHaveLength(1);
 
-    const res = await post(`${base}/api/upload-types/${created.id}/process`, {
+    const res = await post(`${base}/api/sources/${created.id}/process`, {
       account: "acc",
       content: "d,a\n2024-01-02,-3.50\n",
     });
@@ -58,13 +56,13 @@ describe("upload type API", () => {
       ((await res.json()) as { transactions: unknown }).transactions,
     ).toEqual([{ account: "acc", date: "2024-01-02", amount: -350 }]);
 
-    const del = await fetch(`${base}/api/upload-types/${created.id}`, {
+    const del = await fetch(`${base}/api/sources/${created.id}`, {
       method: "DELETE",
     });
     expect(del.status).toBe(200);
     expect(
       (
-        await fetch(`${base}/api/upload-types/${created.id}`, {
+        await fetch(`${base}/api/sources/${created.id}`, {
           method: "DELETE",
         })
       ).status,
@@ -73,10 +71,10 @@ describe("upload type API", () => {
 
   it("persists across restarts", async () => {
     const file = join(mkdtempSync(join(tmpdir(), "ac-")), "nested", "t.json");
-    const base = await start(new UploadTypeStore(file));
-    await post(`${base}/api/upload-types`, valid);
-    const base2 = await start(new UploadTypeStore(file));
-    const list = await (await fetch(`${base2}/api/upload-types`)).json();
+    const base = await start(new SourceStore(file));
+    await post(`${base}/api/sources`, valid);
+    const base2 = await start(new SourceStore(file));
+    const list = await (await fetch(`${base2}/api/sources`)).json();
     expect(list).toHaveLength(1);
   });
 });

@@ -2,13 +2,9 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer as createHttpServer, type Server } from "node:http";
 import { extname, join } from "node:path";
 import type { Crawler } from "crawler-core";
-import {
-  processCsv,
-  type UploadTypeDraft,
-  validateUploadType,
-} from "statement-core";
+import { processCsv, type SourceDraft, validateSource } from "statement-core";
 import { CrawlerRunner, type RunnerEvent } from "./runner.js";
-import { UploadTypeStore } from "./uploadTypeStore.js";
+import { SourceStore } from "./sourceStore.js";
 
 const CONTENT_TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -25,8 +21,8 @@ export interface CreateServerOptions {
   crawlers: Iterable<Crawler>;
   /** Directory containing the built dashboard's static assets, if any. */
   staticDir?: string;
-  /** Upload type storage. Defaults to a non-persistent in-memory store. */
-  uploadTypes?: UploadTypeStore;
+  /** Source storage. Defaults to a non-persistent in-memory store. */
+  sources?: SourceStore;
 }
 
 export interface AccountCrawlerServer {
@@ -88,7 +84,7 @@ export function createServer(
   options: CreateServerOptions,
 ): AccountCrawlerServer {
   const runner = new CrawlerRunner(options.crawlers);
-  const uploadTypes = options.uploadTypes ?? new UploadTypeStore();
+  const sources = options.sources ?? new SourceStore();
   const sseClients = new Set<import("node:http").ServerResponse>();
 
   const broadcast = (event: RunnerEvent): void => {
@@ -102,8 +98,8 @@ export function createServer(
   const server = createHttpServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
 
-    if (url.pathname.startsWith("/api/upload-types")) {
-      handleUploadTypes(req, res, url.pathname, uploadTypes).catch(() => {
+    if (url.pathname.startsWith("/api/sources")) {
+      handleSources(req, res, url.pathname, sources).catch(() => {
         sendJson(res, 500, { error: "Internal error" });
       });
       return;
@@ -169,13 +165,13 @@ export function createServer(
   return { server, runner };
 }
 
-async function handleUploadTypes(
+async function handleSources(
   req: import("node:http").IncomingMessage,
   res: import("node:http").ServerResponse,
   pathname: string,
-  store: UploadTypeStore,
+  store: SourceStore,
 ): Promise<void> {
-  if (pathname === "/api/upload-types") {
+  if (pathname === "/api/sources") {
     if (req.method === "GET") {
       sendJson(res, 200, store.list());
       return;
@@ -188,12 +184,12 @@ async function handleUploadTypes(
         sendJson(res, 400, { errors: ["Body must be valid JSON"] });
         return;
       }
-      const errors = validateUploadType(body);
+      const errors = validateSource(body);
       if (errors.length > 0) {
         sendJson(res, 400, { errors });
         return;
       }
-      const { id: _ignored, ...draft } = body as UploadTypeDraft & {
+      const { id: _ignored, ...draft } = body as SourceDraft & {
         id?: string;
       };
       sendJson(res, 201, store.add(draft));
@@ -201,21 +197,21 @@ async function handleUploadTypes(
     }
   }
 
-  const match = pathname.match(/^\/api\/upload-types\/([^/]+)(\/process)?$/);
+  const match = pathname.match(/^\/api\/sources\/([^/]+)(\/process)?$/);
   if (match) {
     const id = decodeURIComponent(match[1] ?? "");
     if (!match[2] && req.method === "DELETE") {
       if (store.remove(id)) {
         sendJson(res, 200, { deleted: id });
       } else {
-        sendJson(res, 404, { error: `No upload type "${id}"` });
+        sendJson(res, 404, { error: `No source "${id}"` });
       }
       return;
     }
     if (match[2] && req.method === "POST") {
       const type = store.get(id);
       if (!type) {
-        sendJson(res, 404, { error: `No upload type "${id}"` });
+        sendJson(res, 404, { error: `No source "${id}"` });
         return;
       }
       let body: { account?: unknown; content?: unknown };
