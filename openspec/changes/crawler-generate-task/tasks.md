@@ -1,17 +1,20 @@
 ## 1. Spike
 
-- [x] 1.1 Spike: establish that codegen cannot be customized and that function
-      keys are not reliably recorded, leading to an own public-API recorder
+- [x] 1.1 Verify the recorder captures the manual-mode toggle click and finishes
+      writing the output file when the browser closes; record the observed
+      output shape as a test fixture (the F9 key approach was dropped because it
+      was not recorded)
 
 ## 2. Transformation
 
-- [x] 2.1 Implement the page recorder script and `record()` so manual sections
-      become a single `await page.pause();` and typed values never leave the
-      page, verified in a real browser
+- [x] 2.1 Implement `sanitize()` that replaces spans between manual-mode toggle
+      clicks (including an unmatched start) with a single `await page.pause();`
+      and verify with unit tests on fixture recordings
 - [x] 2.2 Add password-pattern redaction (English and French terms) with a
       warning list, and verify with unit tests that no credential value remains
       in the output
-- [x] 2.3 Generate only page steps (no launch boilerplate), verified by tests
+- [x] 2.3 Strip the wrapper/launch boilerplate so only page steps remain, and
+      verify with a unit test
 
 ## 3. Generator Script
 
@@ -46,6 +49,4 @@
       clicks are recorded and state survives
 - [x] 5.2 Add shared `launchBrowser()` (real Chrome, no automation flag) used by
       both the recorder and generated crawlers
-- [x] 5.3 Replace the private-API recorder with a public-API recorder
-      (`addInitScript` + `exposeFunction`) and verify against a real browser
-- [ ] 5.4 Developer verifies against their bank that login is no longer denied
+- [ ] 5.3 Developer verifies against their bank that login is no longer denied

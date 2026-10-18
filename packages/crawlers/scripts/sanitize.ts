@@ -1,11 +1,16 @@
 /**
- * Pure post-processing of recorded statements: defense-in-depth redaction of
- * likely credential entries (replaced by `await page.pause();`) as a safety
- * net on top of the recorder's own handling of manual mode and password
- * inputs.
+ * Pure transformation of a raw `playwright codegen` recording (JavaScript
+ * library target) into the page steps of a crawler, with all manual sections
+ * and likely credential entries replaced by `await page.pause();`.
  */
 
 export const PAUSE_STATEMENT = "await page.pause();";
+/**
+ * Accessible name / id of the injected manual-mode toggle button. A recorded
+ * click on it is the marker that starts or ends a manual section.
+ */
+export const MANUAL_TOGGLE_TOKEN = "crawler-manual-toggle";
+
 /** Terms (English and French) that indicate a password-like field. */
 export const DEFAULT_PASSWORD_PATTERNS: RegExp[] = [
   /pass(?:word|code|wd|phrase)/,
@@ -24,11 +29,50 @@ export interface SanitizeOptions {
 }
 
 export interface SanitizeResult {
-  /** Page steps, one statement per entry. */
+  /** Page steps, one statement per entry (may span lines), unindented. */
   steps: string[];
   warnings: string[];
   /** Number of recorded steps, not counting the initial navigation. */
   recordedStepCount: number;
+}
+
+const BODY_START = /^\s*const page = await context\.newPage\(\);\s*$/;
+const BODY_END = /^\s*\/\/ -{5,}\s*$/;
+
+/** Extracts the lines between the page creation and the closing boilerplate. */
+function extractBody(recording: string): string[] {
+  const lines = recording.split(/\r?\n/);
+  const start = lines.findIndex((line) => BODY_START.test(line));
+  if (start === -1) {
+    return [];
+  }
+  const rest = lines.slice(start + 1);
+  const end = rest.findIndex((line) => BODY_END.test(line));
+  return end === -1 ? rest : rest.slice(0, end);
+}
+
+/** Groups body lines into statements using indentation of the first line. */
+function groupStatements(body: string[]): string[] {
+  const nonEmpty = body.filter((line) => line.trim() !== "");
+  const first = nonEmpty[0];
+  if (first === undefined) {
+    return [];
+  }
+  const baseIndent = first.length - first.trimStart().length;
+  const statements: string[][] = [];
+  for (const line of nonEmpty) {
+    const indent = line.length - line.trimStart().length;
+    const trimmed = line.trimStart();
+    const isContinuation =
+      indent > baseIndent || (indent === baseIndent && /^[})\]]/.test(trimmed));
+    const current = statements[statements.length - 1];
+    if (isContinuation && current) {
+      current.push(line.slice(baseIndent));
+    } else {
+      statements.push([line.slice(baseIndent)]);
+    }
+  }
+  return statements.map((lines) => lines.join("\n"));
 }
 
 function normalize(text: string): string {
@@ -36,6 +80,10 @@ function normalize(text: string): string {
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase();
+}
+
+function isMarker(statement: string): boolean {
+  return statement.includes(MANUAL_TOGGLE_TOKEN);
 }
 
 /** The locator portion of a `.fill(...)`, i.e. everything before the call. */
@@ -54,24 +102,52 @@ function isPasswordFill(statement: string, patterns: RegExp[]): boolean {
 }
 
 export function sanitize(
-  statements: string[],
+  recording: string,
   options: SanitizeOptions = {},
 ): SanitizeResult {
   const patterns = options.passwordPatterns ?? DEFAULT_PASSWORD_PATTERNS;
+  const statements = groupStatements(extractBody(recording));
   const steps: string[] = [];
   const warnings: string[] = [];
+  let inManualSection = false;
+
+  const pushPause = () => {
+    if (steps[steps.length - 1] !== PAUSE_STATEMENT) {
+      steps.push(PAUSE_STATEMENT);
+    }
+  };
 
   for (const statement of statements) {
-    if (isPasswordFill(statement, patterns)) {
-      warnings.push(
-        `A password-like field was filled outside a manual section; its value was removed and replaced with a pause: ${fillTarget(statement)?.trim()}`,
-      );
-      if (steps[steps.length - 1] !== PAUSE_STATEMENT) {
+    // Closing the window to finish recording is recorded; it is not a step.
+    if (/^await page\d*\.close\(\)/.test(statement)) {
+      continue;
+    }
+    if (isMarker(statement)) {
+      if (inManualSection) {
+        inManualSection = false;
+      } else {
+        inManualSection = true;
         steps.push(PAUSE_STATEMENT);
       }
       continue;
     }
+    if (inManualSection) {
+      continue;
+    }
+    if (isPasswordFill(statement, patterns)) {
+      warnings.push(
+        `A password-like field was filled outside a manual section; its value was removed and replaced with a pause: ${fillTarget(statement)?.trim()}`,
+      );
+      pushPause();
+      continue;
+    }
     steps.push(statement);
+  }
+
+  if (inManualSection) {
+    warnings.push(
+      "Manual mode was switched on but never off; everything after it was treated as manual.",
+    );
   }
 
   const recordedStepCount = steps.filter(

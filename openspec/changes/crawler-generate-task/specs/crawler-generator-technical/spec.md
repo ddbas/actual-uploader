@@ -17,27 +17,25 @@ crawler name and start URL as arguments. It SHALL be runnable with
 - **WHEN** a developer runs `mise tasks`
 - **THEN** `crawler:generate` appears with a description
 
-### Requirement: Recording Uses Only Public Playwright APIs
+### Requirement: Recording Uses Playwright's Recorder With File Output
 
-The task SHALL record using only public Playwright APIs: it SHALL launch the
-browser itself, inject a recorder script with `addInitScript`, and receive
-events with `exposeFunction`. It SHALL NOT use private or underscore-prefixed
-Playwright APIs. The recorder SHALL generate `click`, `check`/`uncheck`, `fill`,
-`selectOption` and Enter `press` steps from trusted user events, and SHALL show
-a floating manual-mode toggle button in top-level pages whose state persists
-across navigations. While manual mode is on, no events SHALL be recorded and no
-typed values SHALL leave the page; `type=password` inputs SHALL never have their
-value captured. No raw recording SHALL be written to disk.
+The task SHALL launch the browser itself and enable Playwright's recorder on its
+context with JavaScript output written to a temporary file, and SHALL read that
+file after the browser closes and remove it afterward. It SHALL inject a
+floating manual-mode toggle button (identified by the token
+`crawler-manual-toggle`) into top-level pages, whose recorded clicks serve as
+manual-section markers. The button's on/off state SHALL persist across page
+navigations.
 
-#### Scenario: Manual input never captured
+#### Scenario: Generated code is read after exit
 
-- **WHEN** the user toggles manual mode on and types a username and password
-- **THEN** none of the typed values appear in the recorder's output
+- **WHEN** the browser closes after the user finishes the session
+- **THEN** the task reads the temporary output file and removes it afterward
 
-#### Scenario: Unmarked password input
+#### Scenario: Toggle clicks are recorded
 
-- **WHEN** the user types into a `type=password` input outside manual mode
-- **THEN** the recorder emits a pause for it and no value is captured
+- **WHEN** the user clicks the injected toggle button
+- **THEN** the recording contains a statement naming `crawler-manual-toggle`
 
 ### Requirement: Browser Reduces Automation Signals
 
@@ -51,17 +49,29 @@ Playwright's Chromium with a warning if Chrome is unavailable.
 - **WHEN** Google Chrome is not installed
 - **THEN** the launcher falls back to Chromium and prints a warning
 
-### Requirement: Recorded Steps Are Sanitized Before Being Written
+### Requirement: Recorded Code Is Post-Processed Before Being Written
 
-Before writing any crawler file, the task SHALL replace every `fill` statement
-targeting a likely password field (by locator text matching a configurable
-pattern list including English and French terms) with `await page.pause();` and
-warn the developer. Consecutive pauses SHALL be collapsed.
+After reading the recording, the task SHALL transform it as follows before
+writing any crawler file: (1) every span of statements delimited by a pair of
+statements naming the toggle button token is replaced with a single
+`await page.pause();`, and an unmatched start marker extends the span to the end
+of the recording; (2) every `fill` statement targeting a likely password field
+(by accessible name or selector matching a configurable pattern list including
+English and French terms) is replaced with `await page.pause();`; (3) the
+Playwright test wrapper and launch boilerplate are removed so only the page
+steps remain. Redaction SHALL occur in memory before any crawler file is
+written; the raw recording SHALL be deleted.
+
+#### Scenario: Marked span replaced
+
+- **WHEN** the recording contains a toggle click, a username `fill`, a password
+  `fill`, a submit `click`, and a second toggle click
+- **THEN** the output contains a single `await page.pause();` in their place
 
 #### Scenario: Password-like fill replaced
 
-- **WHEN** the recorded steps contain a `fill` on a field named "Mot de passe"
-  with a real value
+- **WHEN** the recording contains a `fill` on a field named "Mot de passe" with
+  a real value
 - **THEN** the output contains `await page.pause();` in its place and the value
   is not written anywhere
 

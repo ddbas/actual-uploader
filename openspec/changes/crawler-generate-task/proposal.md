@@ -1,16 +1,16 @@
 ## Why
 
 Writing a crawler by hand means reverse-engineering a bank's login and
-navigation flow in code. Playwright's codegen can record that flow, but it
-cannot be customized and today there is no workflow in the repo that turns a
-recording into a crawler, and a raw recording would capture credentials the user
-types. A single command that records a session and scaffolds a crawler removes
-the boilerplate and keeps credential entry manual.
+navigation flow in code. Playwright's codegen can record that flow, but today
+there is no workflow in the repo that turns a recording into a crawler, and a
+raw recording would capture credentials the user types. A single command that
+records a session and scaffolds a crawler removes the boilerplate and keeps
+credential entry manual.
 
 ## What Changes
 
-- Add a Mise task `crawler:generate <name> <url>` that launches a recording
-  browser on the given URL and, once the user finishes recording, scaffolds a
+- Add a Mise task `crawler:generate <name> <url>` that launches Playwright
+  codegen on the given URL and, once the user finishes recording, scaffolds a
   new crawler in `packages/crawlers/src/` from the recording.
 - While recording, the user clicks a floating "manual mode" button injected into
   the page to start, and again to end, a manual section (e.g. login). Everything
