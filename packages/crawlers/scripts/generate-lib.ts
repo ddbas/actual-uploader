@@ -97,8 +97,11 @@ export function renderBanner(markerKey: string): string {
     line("Everything between the two presses (e.g. logging in) is NOT"),
     line("recorded; the crawler will pause there for you to act by hand."),
     line(),
+    line("IMPORTANT: click into a field or button BEFORE pressing"),
+    line(`${markerKey}. With nothing focused, codegen drops the key press.`),
+    line(),
     line("To finish: close the browser window."),
-    ...(process.platform === "darwin"
+    ...(process.platform === "darwin" && /^F\d+$/.test(markerKey)
       ? [line(`macOS: hold fn while pressing ${markerKey} for function keys.`)]
       : []),
     line(),

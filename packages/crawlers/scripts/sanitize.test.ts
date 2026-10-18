@@ -38,7 +38,7 @@ describe("sanitize", () => {
       "alice-secret-user",
       "hunter2-secret",
       "motdepasse-secret",
-      "F9",
+      "Escape",
     ]) {
       expect(output).not.toContain(secret);
     }
@@ -66,7 +66,7 @@ describe("sanitize", () => {
     const result = sanitize(
       wrap(
         "await page.goto('https://x.test/');",
-        "await page.locator('body').press('F9');",
+        "await page.locator('body').press('Escape');",
         "await page.getByLabel('Code').fill('123456');",
         "await page.getByRole('button').click();",
       ),
@@ -81,16 +81,16 @@ describe("sanitize", () => {
   it("honors a custom marker key", () => {
     const result = sanitize(
       wrap(
-        "await page.locator('body').press('F8');",
+        "await page.locator('body').press('Tab');",
         "await page.getByLabel('User').fill('bob');",
-        "await page.locator('body').press('F8');",
-        "await page.getByRole('button').press('F9');",
+        "await page.locator('body').press('Tab');",
+        "await page.getByRole('button').press('Escape');",
       ),
-      { markerKey: "F8" },
+      { markerKey: "Tab" },
     );
     expect(result.steps).toEqual([
       PAUSE_STATEMENT,
-      "await page.getByRole('button').press('F9');",
+      "await page.getByRole('button').press('Escape');",
     ]);
   });
 

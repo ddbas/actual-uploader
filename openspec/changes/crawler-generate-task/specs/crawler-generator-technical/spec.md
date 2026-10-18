@@ -44,8 +44,8 @@ written; the raw recording SHALL be deleted.
 
 #### Scenario: Marked span replaced
 
-- **WHEN** the recording contains a `press('F9')`, a username `fill`, a password
-  `fill`, a submit `click`, and a second `press('F9')`
+- **WHEN** the recording contains a `press('Escape')`, a username `fill`, a
+  password `fill`, a submit `click`, and a second `press('Escape')`
 - **THEN** the output contains a single `await page.pause();` in their place
 
 #### Scenario: Password-like fill replaced

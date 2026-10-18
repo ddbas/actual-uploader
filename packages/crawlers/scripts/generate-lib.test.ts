@@ -13,7 +13,7 @@ describe("parseArgs", () => {
       args: {
         name: "my-bank",
         url: "https://b.example/login",
-        markerKey: "F9",
+        markerKey: "Escape",
       },
     });
   });
@@ -37,7 +37,13 @@ describe("parseArgs", () => {
 describe("renderBanner", () => {
   it("names the configured marker key", () => {
     expect(renderBanner("F8")).toContain("F8");
-    expect(renderBanner("F8")).not.toContain("F9");
+    expect(renderBanner("F8")).not.toContain("Escape");
+  });
+  it("tells the user to focus an element first", () => {
+    expect(renderBanner("Escape")).toMatch(/click .*field/i);
+  });
+  it("only mentions fn for function-key markers", () => {
+    expect(renderBanner("Escape")).not.toContain("fn");
   });
 });
 

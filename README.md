@@ -43,10 +43,12 @@ mise run crawler:generate <name> <url> [--marker-key <key>]
 ```
 
 This opens Playwright codegen on `<url>`. Click through the site as you want the
-crawler to. To keep credentials out of the code, press the **marker key**
-(default `F9`; on macOS laptops hold `fn`) before logging in and press it again
-afterwards: everything between the two presses is discarded and replaced by a
-single `await page.pause()`, so you log in by hand each time the crawler runs.
+crawler to. To keep credentials out of the code, click into a field or button
+(codegen drops key presses when nothing is focused), press the **marker key**
+(default `Escape`; avoid using it for anything else while recording) before
+logging in, then click a field again and press it once more afterwards:
+everything between the two presses is discarded and replaced by a single
+`await page.pause()`, so you log in by hand each time the crawler runs.
 Password-like fields that you forget to mark are redacted the same way, with a
 warning. Close the browser window to finish; the crawler is written to
 `packages/crawlers/src/<name>.ts` and registered in `index.ts`. Re-running with

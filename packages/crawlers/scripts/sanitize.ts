@@ -5,7 +5,7 @@
  */
 
 export const PAUSE_STATEMENT = "await page.pause();";
-export const DEFAULT_MARKER_KEY = "F9";
+export const DEFAULT_MARKER_KEY = "Escape";
 
 /** Terms (English and French) that indicate a password-like field. */
 export const DEFAULT_PASSWORD_PATTERNS: RegExp[] = [
@@ -141,7 +141,7 @@ export function sanitize(
 
   if (inManualSection) {
     warnings.push(
-      `Marker key ${markerKey} was pressed to start a manual section but never to end it; everything after it was treated as manual.`,
+      `Marker key ${markerKey} was pressed to start a manual section but never to end it; everything after it was treated as manual. (Codegen drops key presses when no element has focus; click a field or button before pressing the marker key.)`,
     );
   }
 

@@ -62,11 +62,14 @@ marked placeholder for the developer to complete.
 
 ### Requirement: Manual Steps Can Be Marked During Recording
 
-The developer SHALL be able to mark a manual section while recording by pressing
-a documented marker key (default `F9`, configurable) once to start the section
-and once to end it, with focus anywhere on the page. In the generated crawler,
-each marked section SHALL be replaced by a single pause for the user to act
-manually, and nothing recorded inside the section SHALL be replayed or stored.
+The developer SHALL be able to mark a manual section while recording by focusing
+an element (clicking a field or button) and pressing a documented marker key
+(default `Escape`, configurable) once to start the section, then focusing an
+element and pressing it again to end it. A press with no element focused is not
+recorded by Playwright codegen and so cannot be recognized. In the generated
+crawler, each marked section SHALL be replaced by a single pause for the user to
+act manually, and nothing recorded inside the section SHALL be replayed or
+stored.
 
 #### Scenario: Login marked as manual
 
@@ -75,16 +78,24 @@ manually, and nothing recorded inside the section SHALL be replayed or stored.
 - **THEN** the generated crawler pauses at that point, and contains neither the
   steps performed inside the section nor any typed value
 
-#### Scenario: Marker pressed with no field focused
+#### Scenario: Marker pressed with a non-input element focused
 
-- **WHEN** the developer presses the marker key while no input is focused
-- **THEN** it is still recognized as a section boundary
+- **WHEN** the developer clicks a button or link and presses the marker key
+- **THEN** it is recognized as a section boundary
+
+#### Scenario: Marker pressed with nothing focused
+
+- **WHEN** the developer presses the marker key while no element is focused
+- **THEN** codegen does not record it, and the resulting unmatched marker is
+  handled as an unterminated section with a warning that tells the developer to
+  focus an element first
 
 #### Scenario: Unterminated manual section
 
 - **WHEN** the recording ends after a start marker with no matching end marker
 - **THEN** everything after the start marker is treated as manual and the task
-  prints a warning
+  prints a warning that suggests focusing an element before pressing the marker
+  key
 
 ### Requirement: Credentials Are Never Written to Disk
 
@@ -104,11 +115,12 @@ the developer when it did so.
 
 Before opening the browser the task SHALL print a large, visually distinct
 banner, impossible to mistake for ordinary log output, stating that the marker
-key (e.g. `F9`) toggles manual (pause) mode on and off, and that anything done
-between the two presses (such as logging in) is not recorded. The banner SHALL
+key (default `Escape`) toggles manual (pause) mode on and off, that anything
+done between the two presses (such as logging in) is not recorded, and that an
+element must be clicked/focused before pressing the key. The banner SHALL
 reflect the configured marker key and SHALL also say how to finish recording. On
-macOS it SHALL note that the `fn` key may need to be held to produce a function
-key.
+macOS, when the marker key is a function key, it SHALL note that the `fn` key
+may need to be held.
 
 #### Scenario: Banner shown at start
 
@@ -119,7 +131,7 @@ key.
 #### Scenario: Custom marker key
 
 - **WHEN** the developer configures a different marker key
-- **THEN** the banner names that key instead of `F9`
+- **THEN** the banner names that key instead of `Escape`
 
 ### Requirement: Generated Crawler Appears in the Dashboard
 

@@ -2,8 +2,9 @@
 
 - [ ] 1.1 Run `playwright codegen -o /tmp/rec.ts --target=javascript <url>`
       manually, close the window, and confirm the file is complete, the process
-      exits, and a bare `F9` press (with and without a focused field) is
-      recorded as a `press`; record the observed output shape as a test fixture
+      exits, and an `Escape` press is recorded as a `press` when a field is
+      focused and is NOT recorded when nothing is focused (per recorder source);
+      record the observed output shape as a test fixture
 
 ## 2. Transformation
 
@@ -22,9 +23,9 @@
       verify each failure mode exits non-zero with usage without launching a
       browser
 - [x] 3.2 Spawn codegen with a temp output file, print the large pause-key
-      banner (marker key as on/off toggle, how to finish, macOS `fn` note)
-      before the browser opens, read and delete the file on exit, and verify
-      with a manual run
+      banner (marker key as on/off toggle, click-a-field-first reminder, how to
+      finish, macOS `fn` note only for function-key markers) before the browser
+      opens, read and delete the file on exit, and verify with a manual run
 - [x] 3.3 Implement the crawler template and write
       `packages/crawlers/src/<name>.ts`, and verify the generated file passes
       Biome and type checks
