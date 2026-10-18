@@ -1,13 +1,15 @@
 ## 1. Spike
 
 - [ ] 1.1 Run `playwright codegen -o /tmp/rec.ts --target=javascript <url>`
-      manually, close the window, and confirm the file is complete and the
-      process exits; record the observed output shape as a test fixture
+      manually, close the window, and confirm the file is complete, the process
+      exits, and a bare `F9` press (with and without a focused field) is
+      recorded as a `press`; record the observed output shape as a test fixture
 
 ## 2. Transformation
 
-- [ ] 2.1 Implement `sanitize()` that replaces sentinel statements with
-      `await page.pause();` and verify with unit tests on fixture recordings
+- [ ] 2.1 Implement `sanitize()` that replaces spans between marker-key presses
+      (including an unmatched start) with a single `await page.pause();` and
+      verify with unit tests on fixture recordings
 - [ ] 2.2 Add password-pattern redaction (English and French terms) with a
       warning list, and verify with unit tests that no credential value remains
       in the output
@@ -32,7 +34,7 @@
 
 - [ ] 4.1 Add the `crawler:generate` task to `mise.toml` and verify it appears
       in `mise tasks` and passes arguments through
-- [ ] 4.2 Document the workflow (sentinel, finishing a recording) in README.md
+- [ ] 4.2 Document the workflow (marker key, finishing a recording) in README.md
       and fix the stale `mise run install`/`build` task names
 - [ ] 4.3 End-to-end: generate a crawler against a test page, run
       `mise run pnpm:build`, and verify the build succeeds and no typed

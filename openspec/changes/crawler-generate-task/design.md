@@ -18,7 +18,16 @@ Research findings that shape this design:
    UI offers record/stop, copy, clear, target language, and assertion tools, but
    no "insert pause" action. (`page.pause()` is the opposite direction: it opens
    the Inspector from inside a script.) So the marker must be conveyed through
-   something the recorder does capture: typed text.
+   something the recorder does capture.
+3. **What the recorder captures from the keyboard.** Checked against the
+   recorder source (`packages/injected/src/recorder/recorder.ts`): printable
+   characters typed with no modifier are _not_ recorded as key presses; they
+   only appear as a `fill` when an editable field is focused (and a `check` on a
+   checkbox). Typing a word outside a field is therefore invisible.
+   Non-printable keys (e.g. `F9`, arrows, `Escape`) and any key with
+   Ctrl/Alt/Meta _are_ recorded as `press` actions, even with nothing focused
+   (they target the focused element or `body`). So a function key or a modifier
+   chord works as a marker, anywhere on the page.
 
 ## Goals / Non-Goals
 
@@ -37,19 +46,29 @@ Research findings that shape this design:
 
 ## Decisions
 
-**Sentinel text marks manual steps.** The developer types `__PAUSE__` into a
-field; post-processing replaces that statement with `await page.pause();`.
-Alternatives: (a) a pause key/button — not supported by codegen; (b) a two-pass
-flow where the developer later edits the file by hand — easy to forget and risks
-committing credentials; (c) only heuristic redaction — catches passwords but not
-usernames, one-time codes, or other manual steps. The sentinel handles arbitrary
-steps; heuristics are the safety net.
+**A marker key delimits manual sections.** The developer presses `F9` (default;
+configurable with an option) to begin a manual section, does the manual work
+(typing credentials, solving MFA, ...) in the recording browser, then presses
+`F9` again. Post-processing drops every recorded statement between the two
+`press('F9')` statements and emits one `await page.pause();`. This beats marking
+individual fields: the recorded submit click or navigation inside the section
+would otherwise replay after the human already did it, and typed values never
+reach the output. An unmatched start marker treats the rest of the recording as
+manual, with a warning. Marker key choice: a bare function key avoids colliding
+with typing, works with no field focused, and is recorded by codegen. Avoid
+`F5`/`F11`/`F12`/`Escape` (browser or page behavior). Mac laptops need `fn` for
+F-keys, which is why the key is configurable. Alternatives: (a) sentinel text
+such as `__PAUSE__` typed into a field — only works in an editable field and
+leaves a bogus `fill` to clean up; (b) a Playwright UI button — none exists; (c)
+hand-editing afterwards — easy to forget and risks committing credentials; (d)
+only heuristic redaction — catches passwords but not usernames, one-time codes,
+or other manual steps.
 
 **Heuristic redaction as a safety net.** `fill` statements whose target matches
 a pattern list (`password`, `passcode`, `mot de passe`, `pin`, `nip`, ...)
-become pauses even without the sentinel, with a warning. Keeps real passwords
+become pauses even without the marker key, with a warning. Keeps real passwords
 out of memory-to-disk paths. Usernames are not auto-redacted (too many false
-positives); users mark them with the sentinel.
+positives); users mark them with the marker key.
 
 **Spawn the codegen CLI rather than a library API.** Use the local `playwright`
 binary (`pnpm exec playwright codegen --target=javascript -o <tmp> <url>`),
@@ -78,11 +97,11 @@ registration is done by inserting an import and `registerCrawler` line.
   recordings, and the task fails loudly if the output has no recognizable page
   steps.
 - [Heuristic redaction misses a credential field with an unusual name] →
-  Document the sentinel as the primary mechanism; warn the user to review the
+  Document the marker key as the primary mechanism; warn the user to review the
   generated file; keep the raw recording only in a temp file that is deleted.
-- [Sentinel typed into a real field may trigger validation errors during
-  recording] → Acceptable; the field is just text and the step is discarded
-  afterward.
+- [The marker key press reaches the page and may trigger a site shortcut, or the
+  browser may swallow it] → Default to `F9`, make it configurable, and verify in
+  the spike that codegen records it.
 - [`page.pause()` requires a headed browser] → Generated crawlers launch headed.
   If crawlers later run from the server/dashboard, a headed browser must be
   available (relevant to the broader "real crawler" TODO).

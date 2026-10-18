@@ -62,17 +62,29 @@ marked placeholder for the developer to complete.
 
 ### Requirement: Manual Steps Can Be Marked During Recording
 
-The developer SHALL be able to mark a step as manual while recording by typing
-the documented sentinel value `__PAUSE__` into the field in question. In the
-generated crawler, each marked step SHALL pause for the user to act manually
-instead of replaying a recorded action.
+The developer SHALL be able to mark a manual section while recording by pressing
+a documented marker key (default `F9`, configurable) once to start the section
+and once to end it, with focus anywhere on the page. In the generated crawler,
+each marked section SHALL be replaced by a single pause for the user to act
+manually, and nothing recorded inside the section SHALL be replayed or stored.
 
 #### Scenario: Login marked as manual
 
-- **WHEN** the developer types `__PAUSE__` into the username and password fields
-  and submits
-- **THEN** the generated crawler pauses at that point and does not contain the
-  sentinel or any typed value
+- **WHEN** the developer presses the marker key, logs in by typing credentials
+  and submitting, then presses the marker key again
+- **THEN** the generated crawler pauses at that point, and contains neither the
+  steps performed inside the section nor any typed value
+
+#### Scenario: Marker pressed with no field focused
+
+- **WHEN** the developer presses the marker key while no input is focused
+- **THEN** it is still recognized as a section boundary
+
+#### Scenario: Unterminated manual section
+
+- **WHEN** the recording ends after a start marker with no matching end marker
+- **THEN** everything after the start marker is treated as manual and the task
+  prints a warning
 
 ### Requirement: Credentials Are Never Written to Disk
 
@@ -96,7 +108,7 @@ to mark a manual step and how to finish recording.
 #### Scenario: Instructions shown
 
 - **WHEN** recording starts
-- **THEN** the terminal shows the sentinel value and how to end the recording
+- **THEN** the terminal shows the marker key and how to end the recording
 
 ### Requirement: Generated Crawler Appears in the Dashboard
 

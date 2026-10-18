@@ -32,19 +32,21 @@ SHALL NOT rely on private Playwright APIs or on scraping the Inspector UI.
 ### Requirement: Recorded Code Is Post-Processed Before Being Written
 
 After reading the recording, the task SHALL transform it as follows before
-writing any crawler file: (1) every statement whose entered value is the
-sentinel is replaced with `await page.pause();`; (2) every `fill` statement
-targeting a likely password field (by accessible name or selector matching a
-configurable pattern list including English and French terms) is replaced with
-`await page.pause();`; (3) the Playwright test wrapper and launch boilerplate
-are removed so only the page steps remain. Redaction SHALL occur in memory
-before any crawler file is written; the raw recording SHALL be deleted.
+writing any crawler file: (1) every span of statements delimited by a pair of
+`press` statements for the marker key is replaced with a single
+`await page.pause();`, and an unmatched start marker extends the span to the end
+of the recording; (2) every `fill` statement targeting a likely password field
+(by accessible name or selector matching a configurable pattern list including
+English and French terms) is replaced with `await page.pause();`; (3) the
+Playwright test wrapper and launch boilerplate are removed so only the page
+steps remain. Redaction SHALL occur in memory before any crawler file is
+written; the raw recording SHALL be deleted.
 
-#### Scenario: Sentinel statement replaced
+#### Scenario: Marked span replaced
 
-- **WHEN** the recording contains
-  `await page.getByLabel('Password').fill('__PAUSE__');`
-- **THEN** the output contains `await page.pause();` in its place
+- **WHEN** the recording contains a `press('F9')`, a username `fill`, a password
+  `fill`, a submit `click`, and a second `press('F9')`
+- **THEN** the output contains a single `await page.pause();` in their place
 
 #### Scenario: Password-like fill replaced
 

@@ -12,9 +12,10 @@ credential entry manual.
 - Add a Mise task `crawler:generate <name> <url>` that launches Playwright
   codegen on the given URL and, once the user finishes recording, scaffolds a
   new crawler in `packages/crawlers/src/` from the recording.
-- Any step the user marks as a manual step during recording (by typing a
-  sentinel value into a field) is emitted as `await page.pause()` instead of a
-  recorded action, so credentials are always entered by a human at crawl time.
+- While recording, the user presses a marker key (default `F9`) to start and
+  again to end a manual section (e.g. login). Everything recorded between the
+  two presses is discarded and replaced by a single `await page.pause()`, so
+  credentials are always entered by a human at crawl time.
 - Likely credential entries that were not marked are redacted and also become
   `await page.pause()`, so credentials never land in a file.
 - The scaffolded crawler is registered in `packages/crawlers/src/index.ts` and
