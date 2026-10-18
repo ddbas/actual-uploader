@@ -62,28 +62,29 @@ marked placeholder for the developer to complete.
 
 ### Requirement: Manual Steps Can Be Marked During Recording
 
-The developer SHALL be able to mark a manual section while recording by pressing
-a documented marker key (default `F9`, configurable) once to start the section
-and once to end it, with focus anywhere on the page. In the generated crawler,
-each marked section SHALL be replaced by a single pause for the user to act
-manually, and nothing recorded inside the section SHALL be replayed or stored.
+The developer SHALL be able to mark a manual section while recording by clicking
+a floating toggle button shown on every page: once to start the section and once
+to end it. The button SHALL show its current state (recording or manual mode).
+In the generated crawler, each marked section SHALL be replaced by a single
+pause for the user to act manually, and nothing recorded inside the section
+SHALL be replayed or stored.
 
 #### Scenario: Login marked as manual
 
-- **WHEN** the developer presses the marker key, logs in by typing credentials
-  and submitting, then presses the marker key again
+- **WHEN** the developer clicks the toggle button, logs in by typing credentials
+  and submitting, then clicks the toggle button again
 - **THEN** the generated crawler pauses at that point, and contains neither the
   steps performed inside the section nor any typed value
 
-#### Scenario: Marker pressed with no field focused
+#### Scenario: State survives navigation
 
-- **WHEN** the developer presses the marker key while no input is focused
-- **THEN** it is still recognized as a section boundary
+- **WHEN** manual mode is on and the page navigates
+- **THEN** the button on the new page still shows manual mode on
 
 #### Scenario: Unterminated manual section
 
-- **WHEN** the recording ends after a start marker with no matching end marker
-- **THEN** everything after the start marker is treated as manual and the task
+- **WHEN** the recording ends after a start click with no matching end click
+- **THEN** everything after the start click is treated as manual and the task
   prints a warning
 
 ### Requirement: Credentials Are Never Written to Disk
@@ -100,26 +101,19 @@ the developer when it did so.
 - **THEN** the generated crawler contains a manual pause in its place, the
   password appears nowhere in the generated files, and the task prints a warning
 
-### Requirement: Task Displays a Prominent Pause-Key Reminder
+### Requirement: Task Displays a Prominent Manual-Mode Reminder
 
 Before opening the browser the task SHALL print a large, visually distinct
-banner, impossible to mistake for ordinary log output, stating that the marker
-key (e.g. `F9`) toggles manual (pause) mode on and off, and that anything done
-between the two presses (such as logging in) is not recorded. The banner SHALL
-reflect the configured marker key and SHALL also say how to finish recording. On
-macOS it SHALL note that the `fn` key may need to be held to produce a function
-key.
+banner, impossible to mistake for ordinary log output, stating that the floating
+manual-mode button toggles manual (pause) mode on and off, and that anything
+done between the two clicks (such as logging in) is not recorded. It SHALL also
+say how to finish recording.
 
 #### Scenario: Banner shown at start
 
 - **WHEN** recording starts
-- **THEN** the terminal shows the banner naming the marker key as the
-  manual-mode toggle, before the browser opens
-
-#### Scenario: Custom marker key
-
-- **WHEN** the developer configures a different marker key
-- **THEN** the banner names that key instead of `F9`
+- **THEN** the terminal shows the banner describing the toggle button, before
+  the browser opens
 
 ### Requirement: Generated Crawler Appears in the Dashboard
 

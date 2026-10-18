@@ -13,13 +13,8 @@ describe("parseArgs", () => {
       args: {
         name: "my-bank",
         url: "https://b.example/login",
-        markerKey: "F9",
       },
     });
-  });
-  it("parses marker key", () => {
-    const r = parseArgs(["a", "http://x.test", "--marker-key", "F8"]);
-    expect(r.ok && r.args.markerKey).toBe("F8");
   });
   it.each([
     [["my-bank"]],
@@ -35,9 +30,9 @@ describe("parseArgs", () => {
 });
 
 describe("renderBanner", () => {
-  it("names the configured marker key", () => {
-    expect(renderBanner("F8")).toContain("F8");
-    expect(renderBanner("F8")).not.toContain("F9");
+  it("explains the toggle button", () => {
+    expect(renderBanner()).toContain("MANUAL MODE");
+    expect(renderBanner()).toContain("close the browser window");
   });
 });
 
@@ -49,7 +44,7 @@ describe("renderCrawler", () => {
       steps: ["await page.goto('https://b.example/');", "await page.pause();"],
     });
     expect(out).toContain('id: "my-bank"');
-    expect(out).toContain("headless: false");
+    expect(out).toContain("launchBrowser()");
     expect(out).toContain("export const myBankCrawler");
     expect(out).toContain("await page.pause();");
     expect(out).toContain("// TODO: extract transactions");

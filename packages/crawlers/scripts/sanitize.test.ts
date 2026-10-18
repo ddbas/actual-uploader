@@ -7,6 +7,9 @@ const fixture = readFileSync(
   "utf8",
 );
 
+const TOGGLE =
+  "await page.getByRole('button', { name: 'crawler-manual-toggle' }).click();";
+
 const wrap = (...lines: string[]) =>
   [
     "(async () => {",
@@ -32,13 +35,13 @@ describe("sanitize", () => {
     ]);
   });
 
-  it("never emits typed values or the marker key", () => {
+  it("never emits typed values or the toggle", () => {
     const output = sanitize(fixture).steps.join("\n");
     for (const secret of [
       "alice-secret-user",
       "hunter2-secret",
       "motdepasse-secret",
-      "F9",
+      "crawler-manual-toggle",
     ]) {
       expect(output).not.toContain(secret);
     }
@@ -66,7 +69,7 @@ describe("sanitize", () => {
     const result = sanitize(
       wrap(
         "await page.goto('https://x.test/');",
-        "await page.locator('body').press('F9');",
+        TOGGLE,
         "await page.getByLabel('Code').fill('123456');",
         "await page.getByRole('button').click();",
       ),
@@ -78,25 +81,16 @@ describe("sanitize", () => {
     expect(result.warnings).toHaveLength(1);
   });
 
-  it("honors a custom marker key", () => {
-    const result = sanitize(
-      wrap(
-        "await page.locator('body').press('F8');",
-        "await page.getByLabel('User').fill('bob');",
-        "await page.locator('body').press('F8');",
-        "await page.getByRole('button').press('F9');",
-      ),
-      { markerKey: "F8" },
-    );
-    expect(result.steps).toEqual([
-      PAUSE_STATEMENT,
-      "await page.getByRole('button').press('F9');",
-    ]);
-  });
-
   it("strips wrapper and launch boilerplate", () => {
     const output = sanitize(fixture).steps.join("\n");
     expect(output).not.toMatch(/chromium|newContext|newPage|context\.close/);
+  });
+
+  it("drops the trailing page.close from finishing the recording", () => {
+    const { steps } = sanitize(
+      wrap("await page.goto('https://x.test/');", "await page.close();"),
+    );
+    expect(steps).toEqual(["await page.goto('https://x.test/');"]);
   });
 
   it("reports no recorded steps when only the initial goto exists", () => {
