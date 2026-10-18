@@ -23,8 +23,8 @@
       is assigned to more than one field (shared validation)
 - [x] 3.6 Tests
 
-## 4. Follow-ups (not in this change)
+## Deferred (separate proposals)
 
-- [ ] 4.1 File encoding detection/selection
-- [ ] 4.2 UI for processing a statement with a saved source
-- [ ] 4.3 PDF sources
+- File encoding detection/selection (files are read as UTF-8 for now)
+- UI for processing a statement with a saved source
+- PDF sources
