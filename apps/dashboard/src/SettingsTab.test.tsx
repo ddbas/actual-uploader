@@ -26,18 +26,18 @@ afterEach(() => {
 });
 
 describe("SettingsTab", () => {
-  it("selects Sources by default and switches pages", async () => {
+  it("selects Actual by default and switches pages", async () => {
     render(<SettingsTab />);
-    expect(screen.getByRole("button", { name: "Sources" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
-    expect(await screen.findByText(/No sources yet/)).toBeTruthy();
-    await userEvent.click(screen.getByRole("button", { name: "Actual" }));
     expect(screen.getByRole("button", { name: "Actual" })).toHaveAttribute(
       "aria-current",
       "page",
     );
     expect(screen.getByLabelText(/Server URL/)).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Sources" }));
+    expect(screen.getByRole("button", { name: "Sources" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(await screen.findByText(/No sources yet/)).toBeTruthy();
   });
 });

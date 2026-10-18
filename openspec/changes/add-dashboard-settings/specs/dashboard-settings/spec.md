@@ -9,15 +9,15 @@ connection.
 ### Requirement: Settings Tab With Multiple Pages
 
 The dashboard SHALL present a "Settings" tab, always visible, containing a
-navigation between settings pages. The pages SHALL initially be "Sources" and
-"Actual", and the first page ("Sources") SHALL be selected when the tab is
+navigation between settings pages. The pages SHALL initially be "Actual" and
+"Sources", and the first page ("Actual") SHALL be selected when the tab is
 opened.
 
 #### Scenario: Opening Settings
 
 - **WHEN** the user opens the "Settings" tab
-- **THEN** a navigation listing "Sources" and "Actual" is shown and the
-  "Sources" page is selected
+- **THEN** a navigation listing "Actual" and "Sources" is shown and the "Actual"
+  page is selected
 
 #### Scenario: Switching pages
 

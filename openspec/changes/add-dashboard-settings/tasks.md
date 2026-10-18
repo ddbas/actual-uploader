@@ -11,7 +11,7 @@
 ## 2. Dashboard settings shell
 
 - [x] 2.1 Add `SettingsTab` with page registry and nav; verify with a test that
-      "Sources" is selected by default and switching pages works
+      "Actual" is selected by default and switching pages works
 - [x] 2.2 Update `App.tsx`: replace the "Sources" tab with "Settings" and render
       `SourcesTab` as the Sources page; update `SourcesTab.test.tsx`/App tests
       and verify no top-level "Sources" tab exists

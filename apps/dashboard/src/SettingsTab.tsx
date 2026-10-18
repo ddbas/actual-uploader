@@ -10,8 +10,8 @@ interface SettingsPage {
 
 /** Add a settings page by adding an entry here. The first is the default. */
 const pages: SettingsPage[] = [
-  { id: "sources", label: "Sources", component: SourcesTab },
   { id: "actual", label: "Actual", component: ActualSettingsPage },
+  { id: "sources", label: "Sources", component: SourcesTab },
 ];
 
 export function SettingsTab() {

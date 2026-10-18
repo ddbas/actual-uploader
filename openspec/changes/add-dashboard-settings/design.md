@@ -37,13 +37,13 @@ proposal.md for motivation.
   empty string.
 - **Validation** is shared logic in the server; the dashboard does matching
   client-side checks for fast feedback, with server errors displayed too.
-- **Default page** is "Sources" (first in registry).
+- **Default page** is "Actual" (first in registry).
 
 ## Risks / Trade-offs
 
 - [Secrets stored in plaintext on disk] → 0600 permissions, never returned over
   the API; keychain storage is a follow-up.
 - [Removing the Sources tab changes muscle memory] → Settings is always visible
-  and opens on Sources.
+  and opens on Actual.
 - [Local HTTP API reachable by other local processes] → Same exposure as the
   existing API; out of scope here.
