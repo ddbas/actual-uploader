@@ -1,9 +1,9 @@
-# Account Crawler
+# Transaction Importer
 
-The ultimate goal of this project is to provide a tool that users can run to
-crawl their own banking and financial accounts to extract transaction data and
-then automatically upload it to thei [Actual Budget](https://actualbudget.org)
-account.
+This project implements a tool that allows users to upload their banking
+statement files. It then parses the files and extracts the transaction data,
+which is then automatically uploaded to the user's
+[Actual Budget](https://actualbudget.org) server.
 
 ## Rules
 
