@@ -97,3 +97,21 @@ to mark a manual step and how to finish recording.
 
 - **WHEN** recording starts
 - **THEN** the terminal shows the sentinel value and how to end the recording
+
+### Requirement: Generated Crawler Appears in the Dashboard
+
+A crawler produced by the task SHALL appear in the dashboard's list of available
+crawlers, and SHALL be runnable from it, without the developer editing any
+additional files. The crawler's display name SHALL be derived from the given
+name.
+
+#### Scenario: New crawler listed
+
+- **WHEN** a crawler is generated and the application is rebuilt and started
+- **THEN** the dashboard's crawler list includes the new crawler and it can be
+  run from the Home tab
+
+#### Scenario: Regenerated crawler is not listed twice
+
+- **WHEN** a crawler is regenerated under an existing name
+- **THEN** the dashboard lists it exactly once
