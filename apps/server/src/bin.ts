@@ -42,15 +42,17 @@ async function main() {
   });
 
   const port = Number(process.env.PORT ?? 0);
+  // Containers must set HOST=0.0.0.0 so the published port is reachable.
+  const host = process.env.HOST ?? "127.0.0.1";
 
   await new Promise<void>((resolve) => {
-    server.listen(port, "127.0.0.1", resolve);
+    server.listen(port, host, resolve);
   });
 
   const address = server.address();
   const resolvedPort =
     typeof address === "object" && address ? address.port : port;
-  const url = `http://127.0.0.1:${resolvedPort}`;
+  const url = `http://${host}:${resolvedPort}`;
 
   console.log(`Account Crawler dashboard running at ${url}`);
 

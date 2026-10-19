@@ -15,6 +15,11 @@ run = "pnpm build"
 description = "Run dev processes in parallel"
 run = "pnpm dev"
 
+[tasks."docker:build"]
+description = "Build the server Docker image"
+depends = ["build"]
+run = "docker build -f apps/server/Dockerfile -t account-crawler-server ."
+
 [tasks.install]
 description = "Install dependencies"
 run = "pnpm install"
