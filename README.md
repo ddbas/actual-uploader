@@ -21,6 +21,14 @@ header shows whether the connection works. The server uses the official
 `@actual-app/api` package, so its version should match your Actual server's
 version; a mismatch shows up as the reason next to "Not connected".
 
+Persisted data (sources, Actual settings, Actual cache) is stored in
+`~/.account-crawler` by default. Override it with the `ACCOUNT_CRAWLER_DATA_DIR`
+environment variable or, taking precedence, the `--data-dir` option:
+
+```sh
+pnpm --filter server start -- --data-dir /path/to/data
+```
+
 For local development (with hot reload), run the server and dashboard dev
 servers in separate terminals:
 

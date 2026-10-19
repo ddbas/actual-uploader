@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import open from "open";
 import { ActualSettingsStore } from "./actualSettingsStore.js";
+import { resolveDataDir, USAGE, UsageError } from "./cli.js";
 import { createServer } from "./server.js";
 import { SourceStore } from "./sourceStore.js";
 
@@ -16,12 +17,21 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 async function main() {
+  let dataDir: string;
+  try {
+    dataDir = resolveDataDir(process.argv.slice(2), process.env, homedir());
+  } catch (error) {
+    if (error instanceof UsageError) {
+      console.error(`Error: ${error.message}\n\n${USAGE}`);
+      process.exitCode = 1;
+      return;
+    }
+    throw error;
+  }
   console.warn(
     "WARNING: TLS certificate verification is disabled (temporary).",
   );
   const staticDir = join(__dirname, "..", "..", "dashboard", "dist");
-  const dataDir =
-    process.env.ACCOUNT_CRAWLER_DATA_DIR ?? join(homedir(), ".account-crawler");
   const { server } = createServer({
     sources: new SourceStore(join(dataDir, "sources.json")),
     actualSettings: new ActualSettingsStore(
