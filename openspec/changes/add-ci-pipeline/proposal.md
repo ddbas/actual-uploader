@@ -6,7 +6,7 @@ pipeline should verify every push and publish the image from the default branch.
 ## What Changes
 
 - Add a GitHub Actions workflow that runs the mise `install`, `build` and `test`
-  tasks on every push and pull request.
+  tasks on every pull request and on pushes to the default branch.
 - On the default branch, after those pass, build the server Docker image and
   publish it to the GitHub Container Registry, tagged `latest` and by commit
   SHA.

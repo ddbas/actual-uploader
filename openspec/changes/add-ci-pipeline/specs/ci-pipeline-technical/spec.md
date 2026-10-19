@@ -9,14 +9,21 @@ verifies changes and publishes the server container image.
 
 ### Requirement: Verification On Every Branch
 
-The pipeline SHALL run on every push and pull request. It SHALL install tooling
-with mise and run the mise `install`, `build` and `test` tasks, in that order. A
-failure in any step SHALL fail the run.
+The pipeline SHALL run on every pull request and on every push to the default
+branch, and SHALL NOT run on pushes to other branches (those are covered by
+their pull request). It SHALL install tooling with mise and run the mise
+`install`, `build` and `test` tasks, in that order. A failure in any step SHALL
+fail the run.
 
-#### Scenario: Non-default branch
+#### Scenario: Pull request
 
-- **WHEN** a commit is pushed to a branch other than the default branch
+- **WHEN** a pull request is opened or updated
 - **THEN** the `install`, `build` and `test` tasks run and no image is published
+
+#### Scenario: Push to non-default branch
+
+- **WHEN** a commit is pushed to a non-default branch
+- **THEN** the pipeline does not run on that push
 
 #### Scenario: Failing test
 
