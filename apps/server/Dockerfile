@@ -13,11 +13,17 @@ RUN turbo prune server --docker
 
 # ---
 FROM base AS builder
+# better-sqlite3 has no prebuilt binary for this Node version; build from source
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 # Install dependencies first (only changes when package.json/lockfile do)
 COPY --from=prepare /app/out/json/ .
 RUN pnpm install --frozen-lockfile
 # Then add sources and build (server + dashboard)
 COPY --from=prepare /app/out/full/ .
+# Not included by `turbo prune`, but extended by the packages' tsconfigs
+COPY --from=prepare /app/tsconfig.base.json .
 RUN pnpm turbo build --filter=server
 
 # ---
