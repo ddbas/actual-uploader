@@ -15,6 +15,7 @@
     "start": "node dist/bin.js"
   },
   "dependencies": {
+    "@actual-app/api": "^26.10.0",
     "open": "^11.0.0",
     "statement-core": "workspace:*"
   },

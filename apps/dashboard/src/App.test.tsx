@@ -30,6 +30,50 @@ describe("App", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("shows the connection indicator in the header on every tab", async () => {
+    (fetch as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      async (url: RequestInfo | URL) =>
+        new Response(
+          String(url).endsWith("/api/actual/status")
+            ? '{"connected":true}'
+            : "[]",
+        ),
+    );
+    render(<App />);
+    expect(await screen.findByText("Connected")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("tab", { name: "Settings" }));
+    expect(screen.getByText("Connected")).toBeInTheDocument();
+  });
+
+  it("re-checks the connection after saving Actual settings", async () => {
+    let connected = false;
+    (fetch as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      async (url: RequestInfo | URL, init?: RequestInit) => {
+        const u = String(url);
+        if (u.endsWith("/api/actual/status"))
+          return new Response(JSON.stringify({ connected }));
+        if (u.endsWith("/api/settings/actual")) {
+          if (init?.method === "PUT") connected = true;
+          return new Response(
+            JSON.stringify({
+              serverUrl: "http://x",
+              syncId: "s",
+              hasServerPassword: true,
+              hasEncryptionPassword: false,
+            }),
+          );
+        }
+        return new Response("[]");
+      },
+    );
+    render(<App />);
+    expect(await screen.findByText("Not connected")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("tab", { name: "Settings" }));
+    await screen.findByDisplayValue("http://x");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("Connected")).toBeInTheDocument();
+  });
+
   it("switches to the Settings tab", async () => {
     render(<App />);
     await userEvent.click(screen.getByRole("tab", { name: "Settings" }));

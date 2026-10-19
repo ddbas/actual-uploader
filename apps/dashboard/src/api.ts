@@ -114,3 +114,40 @@ export async function saveActualSettings(
   }
   return res.json();
 }
+
+export interface ActualStatus {
+  connected: boolean;
+  error?: string;
+}
+
+export async function fetchActualStatus(): Promise<ActualStatus> {
+  try {
+    const res = await fetch("/api/actual/status");
+    if (!res.ok) {
+      return { connected: false, error: "Failed to check connection" };
+    }
+    return await res.json();
+  } catch {
+    return { connected: false, error: "Server is unreachable" };
+  }
+}
+
+export interface ImportResult {
+  added: number;
+  updated: number;
+}
+
+export async function importTransactions(
+  transactions: Transaction[],
+): Promise<ImportResult> {
+  const res = await fetch("/api/actual/import", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ transactions }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? "Failed to upload transactions");
+  }
+  return res.json();
+}

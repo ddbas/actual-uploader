@@ -4,6 +4,7 @@ import {
   type Account,
   fetchAccounts,
   fetchSources,
+  importTransactions,
   type ProcessedFile,
   processStatement,
 } from "./api.js";
@@ -26,6 +27,8 @@ export function UploadTab() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
   const [uploaded, setUploaded] = useState<number | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     fetchSources()
@@ -65,11 +68,27 @@ export function UploadTab() {
     }
   }
 
+  async function onUpload() {
+    setUploading(true);
+    setUploadError("");
+    try {
+      const result = await importTransactions(transactions);
+      setUploaded(result.added + result.updated);
+    } catch (err) {
+      setUploadError(
+        err instanceof Error ? err.message : "Failed to upload transactions",
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
   function reset() {
     setResults(null);
     setFiles([]);
     setUploaded(null);
     setError("");
+    setUploadError("");
   }
 
   if (uploaded !== null) {
@@ -139,18 +158,27 @@ export function UploadTab() {
           {transactions.length === 1 ? "" : "s"}
           {errorCount > 0 ? `, ${errorCount} skipped` : ""}.
         </p>
+        {uploadError ? (
+          <div className="alert alert-error mb-4" role="alert">
+            {uploadError}
+          </div>
+        ) : null}
         <div className="flex gap-2">
-          <button type="button" className="btn" onClick={reset}>
+          <button
+            type="button"
+            className="btn"
+            onClick={reset}
+            disabled={uploading}
+          >
             Back
           </button>
           <button
             type="button"
             className="btn btn-primary"
-            disabled={transactions.length === 0}
-            // Actual Budget upload is not implemented yet; confirm only.
-            onClick={() => setUploaded(transactions.length)}
+            disabled={transactions.length === 0 || uploading}
+            onClick={onUpload}
           >
-            Upload to Actual
+            {uploading ? "Uploading…" : "Upload to Actual"}
           </button>
         </div>
       </section>

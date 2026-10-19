@@ -2,10 +2,14 @@ import { type ComponentType, useState } from "react";
 import { ActualSettingsPage } from "./ActualSettingsPage.js";
 import { SourcesTab } from "./SourcesTab.js";
 
+export interface SettingsPageProps {
+  onActualSaved?: () => void;
+}
+
 interface SettingsPage {
   id: string;
   label: string;
-  component: ComponentType;
+  component: ComponentType<SettingsPageProps>;
 }
 
 /** Add a settings page by adding an entry here. The first is the default. */
@@ -14,7 +18,7 @@ const pages: SettingsPage[] = [
   { id: "sources", label: "Sources", component: SourcesTab },
 ];
 
-export function SettingsTab() {
+export function SettingsTab({ onActualSaved }: SettingsPageProps) {
   const [pageId, setPageId] = useState(pages[0]?.id);
   const Page = pages.find((p) => p.id === pageId)?.component;
 
@@ -36,7 +40,9 @@ export function SettingsTab() {
           ))}
         </ul>
       </nav>
-      <div className="flex-1">{Page ? <Page /> : null}</div>
+      <div className="flex-1">
+        {Page ? <Page onActualSaved={onActualSaved} /> : null}
+      </div>
     </div>
   );
 }

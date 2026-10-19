@@ -10,7 +10,15 @@ import { SourceStore } from "./sourceStore.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// TODO: Temporary. Disables TLS certificate verification for ALL outgoing
+// connections so we can reach Actual servers using a private/self-signed CA.
+// Replace with proper CA trust (NODE_EXTRA_CA_CERTS or a setting) later.
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 async function main() {
+  console.warn(
+    "WARNING: TLS certificate verification is disabled (temporary).",
+  );
   const staticDir = join(__dirname, "..", "..", "dashboard", "dist");
   const dataDir =
     process.env.ACCOUNT_CRAWLER_DATA_DIR ?? join(homedir(), ".account-crawler");
@@ -19,6 +27,7 @@ async function main() {
     actualSettings: new ActualSettingsStore(
       join(dataDir, "actual-settings.json"),
     ),
+    actualDataDir: join(dataDir, "actual-cache"),
     staticDir: existsSync(staticDir) ? staticDir : undefined,
   });
 

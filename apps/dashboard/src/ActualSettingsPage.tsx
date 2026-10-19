@@ -17,7 +17,11 @@ function isHttpUrl(value: string): boolean {
   }
 }
 
-export function ActualSettingsPage() {
+export function ActualSettingsPage({
+  onActualSaved,
+}: {
+  onActualSaved?: () => void;
+}) {
   const [serverUrl, setServerUrl] = useState("");
   const [syncId, setSyncId] = useState("");
   const [serverPassword, setServerPassword] = useState("");
@@ -60,6 +64,7 @@ export function ActualSettingsPage() {
       setServerPassword("");
       setEncryptionPassword("");
       setConfirmation(true);
+      onActualSaved?.();
     } catch (err) {
       setErrors(
         err instanceof SettingsValidationError
