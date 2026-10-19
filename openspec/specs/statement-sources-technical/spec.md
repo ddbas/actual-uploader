@@ -10,7 +10,8 @@ archive.
 ### Requirement: Sources Are Persisted by the Server
 
 The server SHALL persist sources to a JSON file in a data directory
-(configurable via `ACCOUNT_CRAWLER_DATA_DIR`) so they survive restarts.
+(configurable via `--data-dir` or `ACCOUNT_CRAWLER_DATA_DIR`) so they survive
+restarts.
 
 #### Scenario: Sources survive a restart
 
