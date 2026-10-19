@@ -30,14 +30,14 @@ RUN pnpm turbo build --filter=server
 FROM base AS runner
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
-    PORT=3000 \
+    PORT=80 \
+    DATA_DIR=/data \
     ACCOUNT_CRAWLER_NO_OPEN=1
 COPY --from=builder --chown=node:node /app /app
-# Data directory: mount a volume here
+# Data directory (DATA_DIR): mount a volume here
 RUN mkdir -p /data && chown node:node /data
 USER node
 VOLUME /data
-EXPOSE 3000
+EXPOSE 80
 WORKDIR /app/apps/server
 ENTRYPOINT ["node", "dist/bin.js"]
-CMD ["--data-dir", "/data"]

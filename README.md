@@ -22,11 +22,12 @@ header shows whether the connection works. The server uses the official
 version; a mismatch shows up as the reason next to "Not connected".
 
 Persisted data (sources, Actual settings, Actual cache) is stored in
-`~/.account-crawler` by default. Override it with the `ACCOUNT_CRAWLER_DATA_DIR`
-environment variable or, taking precedence, the `--data-dir` option:
+`~/.account-crawler` by default. Override it with the `DATA_DIR` environment
+variable. The listen port is set with `PORT` (default: a random free port) and
+the bind address with `HOST` (default: `127.0.0.1`):
 
 ```sh
-pnpm --filter server start -- --data-dir /path/to/data
+DATA_DIR=/path/to/data PORT=8080 pnpm --filter server start
 ```
 
 For local development (with hot reload), run the server and dashboard dev

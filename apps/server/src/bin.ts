@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import open from "open";
 import { ActualSettingsStore } from "./actualSettingsStore.js";
-import { resolveDataDir, USAGE, UsageError } from "./cli.js";
+import { ConfigError, resolveDataDir, resolvePort } from "./config.js";
 import { createServer } from "./server.js";
 import { SourceStore } from "./sourceStore.js";
 
@@ -18,11 +18,13 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 async function main() {
   let dataDir: string;
+  let port: number;
   try {
-    dataDir = resolveDataDir(process.argv.slice(2), process.env, homedir());
+    dataDir = resolveDataDir(process.env, homedir());
+    port = resolvePort(process.env);
   } catch (error) {
-    if (error instanceof UsageError) {
-      console.error(`Error: ${error.message}\n\n${USAGE}`);
+    if (error instanceof ConfigError) {
+      console.error(`Error: ${error.message}`);
       process.exitCode = 1;
       return;
     }
@@ -41,7 +43,6 @@ async function main() {
     staticDir: existsSync(staticDir) ? staticDir : undefined,
   });
 
-  const port = Number(process.env.PORT ?? 0);
   // Containers must set HOST=0.0.0.0 so the published port is reachable.
   const host = process.env.HOST ?? "127.0.0.1";
 
