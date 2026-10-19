@@ -5,50 +5,6 @@ connection settings through the local server.
 
 ## Requirements
 
-### Requirement: Actual Settings Are Persisted by the Server
-
-The server SHALL persist Actual connection settings to `actual-settings.json` in
-the same data directory used for sources, so they survive restarts. The data
-directory SHALL be, in order of precedence: the value of the `--data-dir <path>`
-command-line option of the binary when given, otherwise
-`ACCOUNT_CRAWLER_DATA_DIR` when set, otherwise `~/.account-crawler`. When no
-file path is configured (e.g. in tests) the server SHALL keep settings in memory
-only. This file-based storage is a temporary approach and all persisted server
-data SHALL follow it until a permanent storage solution replaces it.
-
-#### Scenario: Settings survive restart
-
-- **WHEN** settings are saved and the server is restarted with the same data
-  directory
-- **THEN** the saved settings are available again
-
-#### Scenario: Default data directory
-
-- **WHEN** neither `--data-dir` nor `ACCOUNT_CRAWLER_DATA_DIR` is set
-- **THEN** settings are stored in `~/.account-crawler/actual-settings.json`
-
-#### Scenario: Environment variable data directory
-
-- **WHEN** `ACCOUNT_CRAWLER_DATA_DIR` is set and `--data-dir` is not given
-- **THEN** settings are stored in `actual-settings.json` in that directory
-
-#### Scenario: Command-line option overrides environment
-
-- **WHEN** the binary is run with `--data-dir /tmp/x` and
-  `ACCOUNT_CRAWLER_DATA_DIR` is also set
-- **THEN** all persisted data is stored under `/tmp/x`
-
-#### Scenario: Option given without a value
-
-- **WHEN** the binary is run with `--data-dir` and no path
-- **THEN** it prints an error, does not start the server, and exits non-zero
-
-#### Scenario: Unknown argument
-
-- **WHEN** the binary is run with an unrecognised argument
-- **THEN** it prints a usage message, does not start the server, and exits
-  non-zero
-
 ### Requirement: Actual Settings REST API
 
 The server SHALL expose `GET /api/settings/actual` and
@@ -89,3 +45,35 @@ permissions (mode 0600).
 
 - **WHEN** settings are saved to a file
 - **THEN** the file mode permits access by the owner only
+
+### Requirement: Actual Settings Are Persisted in the Data Directory
+
+The server SHALL persist Actual connection settings to `actual-settings.json` in
+the same data directory used for sources, so they survive restarts. The data
+directory SHALL be the value of the `DATA_DIR` environment variable when set and
+non-empty, otherwise `~/.account-crawler`. The binary SHALL NOT accept a
+command-line option for the data directory. When no file path is configured
+(e.g. in tests) the server SHALL keep settings in memory only. This file-based
+storage is a temporary approach and all persisted server data SHALL follow it
+until a permanent storage solution replaces it.
+
+#### Scenario: Settings survive restart
+
+- **WHEN** settings are saved and the server is restarted with the same data
+  directory
+- **THEN** the saved settings are available again
+
+#### Scenario: Default data directory
+
+- **WHEN** `DATA_DIR` is not set
+- **THEN** settings are stored in `~/.account-crawler/actual-settings.json`
+
+#### Scenario: Environment variable data directory
+
+- **WHEN** `DATA_DIR` is set to `/tmp/x`
+- **THEN** all persisted data is stored under `/tmp/x`
+
+#### Scenario: Empty environment variable
+
+- **WHEN** `DATA_DIR` is set to an empty string
+- **THEN** the default data directory is used
