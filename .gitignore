@@ -1,8 +1,9 @@
 # Dependencies
 node_modules/
 
-# Mise
-.mise/
+# Mise (locks/ holds dependency lockfiles referenced by mise.lock)
+.mise/*
+!.mise/locks/
 
 # Turborepo
 .turbo/
