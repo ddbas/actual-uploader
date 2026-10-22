@@ -1,9 +1,9 @@
 ## 1. Credit marker (shared mapping)
 
-- [ ] 1.1 Extract a shared `FieldMapping` type from `CsvSource` in
+- [x] 1.1 Extract a shared `FieldMapping` type from `CsvSource` in
       `packages/statement-core/src/source.ts` and make `CsvSource` use it;
       verify `mise run test` still passes with no behaviour change.
-- [ ] 1.2 Add the optional `creditMarker` to `FieldMapping`, apply it in
+- [x] 1.2 Add the optional `creditMarker` to `FieldMapping`, apply it in
       `interpretRow` before flip-amount, and validate it (non-empty, not digits
       or separators) in `validateSource`; verify new unit tests cover the "CR",
       thousands-space, flip and invalid-marker scenarios.
@@ -13,46 +13,46 @@
 
 ## 2. Year-less dates
 
-- [ ] 2.1 Add `DD MM` and `MM DD` parsing to `statement-core`, including
+- [x] 2.1 Add `DD MM` and `MM DD` parsing to `statement-core`, including
       separators and month names, kept out of the CSV date format options;
       verify unit tests for valid and invalid day/month values.
-- [ ] 2.2 Implement year resolution (anchor year = year of the last row, step
+- [x] 2.2 Implement year resolution (anchor year = year of the last row, step
       back when the month jumps up by more than six, ignore unparseable rows);
       verify tests for the Dec/Jan boundary, the small backward step and invalid
       rows.
 
 ## 3. Approach contract and registry
 
-- [ ] 3.1 Add text item and page types and the approach contract (id, label,
+- [x] 3.1 Add text item and page types and the approach contract (id, label,
       `run`, config validation, versioned config) under
       `packages/statement-core/src/pdf/`; verify it type-checks and exports from
       `index.ts`.
-- [ ] 3.2 Add the approach registry and extend `Source` with `PdfSource` and
+- [x] 3.2 Add the approach registry and extend `Source` with `PdfSource` and
       `validateSource` delegation to the approach; verify tests for a valid
       source, an unknown approach, an invalid config and an untouched CSV
       source.
-- [ ] 3.3 Add `warnings` to the process result type (empty for CSV); verify the
+- [x] 3.3 Add `warnings` to the process result type (empty for CSV); verify the
       existing CSV processing tests are updated and pass.
 
 ## 4. Aligned columns approach
 
-- [ ] 4.1 Build the synthetic text-items fixture with realistic positions and
+- [x] 4.1 Build the synthetic text-items fixture with realistic positions and
       fragmentation but invented data; verify no real names, addresses or
       account numbers appear in it.
-- [ ] 4.2 Implement line grouping and run joining; verify tests for baseline
+- [x] 4.2 Implement line grouping and run joining; verify tests for baseline
       tolerance, word joining ("LES GRILLADES DU") and split digits ("1" +
       "979,73CR") against the fixture.
-- [ ] 4.3 Implement divider-based cell assignment by run midpoint and the
+- [x] 4.3 Implement divider-based cell assignment by run midpoint and the
       date-anchored row filter across pages; verify tests for right-aligned
       amounts, ignored headings and totals lines, and multi-page rows.
-- [ ] 4.4 Map rows through the existing mapping and the year resolution,
+- [x] 4.4 Map rows through the existing mapping and the year resolution,
       returning transactions, page/line errors and the "no transactions" and
       "year could not be determined" warnings; verify end-to-end `run` tests on
       the fixture, including the credit marker and year-less dates.
-- [ ] 4.5 Implement suggested dividers and the initial mapping guess over the
+- [x] 4.5 Implement suggested dividers and the initial mapping guess over the
       grid; verify tests that the fixture's columns are suggested and date and
       amount are pre-assigned.
-- [ ] 4.6 Register the approach with config validation and version; verify
+- [x] 4.6 Register the approach with config validation and version; verify
       config validation tests.
 
 ## 5. statement-pdf package

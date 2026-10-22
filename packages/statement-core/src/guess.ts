@@ -1,9 +1,6 @@
 import { analyzeColumns } from "./columns.js";
-import {
-  type DateFormat,
-  detectDateFormats,
-  type RowWindow,
-} from "./source.js";
+import { type DateFormat, detectDateFormats } from "./mapping.js";
+import type { RowWindow } from "./source.js";
 
 export type FieldKey =
   | "date"

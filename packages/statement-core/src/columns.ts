@@ -1,4 +1,4 @@
-import { detectDateFormats, looksLikeAmount } from "./source.js";
+import { detectDateFormats, looksLikeAmount } from "./mapping.js";
 
 export interface ColumnInfo {
   index: number;
