@@ -230,7 +230,7 @@ const dateFormatsFor = (
 };
 
 /** Short cells only, so a heading mentioning a date is not a date cell. */
-function parsesAsDate(cell: string): boolean {
+export function looksLikeDateCell(cell: string): boolean {
   return (
     (cell.length <= 14 &&
       DATE_FORMATS.some((f) => parseDate(cell, f) !== null)) ||
@@ -250,7 +250,7 @@ export function guessAlignedConfig(
   let dateColumn = 0;
   let best = 0;
   for (let c = 0; c < columnCount; c++) {
-    const n = grid.filter((g) => parsesAsDate(g.cells[c] ?? "")).length;
+    const n = grid.filter((g) => looksLikeDateCell(g.cells[c] ?? "")).length;
     if (n > best) {
       best = n;
       dateColumn = c;
@@ -258,11 +258,11 @@ export function guessAlignedConfig(
   }
   const dateValues = grid
     .map((g) => g.cells[dateColumn] ?? "")
-    .filter(parsesAsDate);
+    .filter(looksLikeDateCell);
   const dateFormat = dateFormatsFor(dateValues)[0] ?? "YYYY MM DD";
 
   const rows = grid
-    .filter((g) => parsesAsDate(g.cells[dateColumn] ?? ""))
+    .filter((g) => looksLikeDateCell(g.cells[dateColumn] ?? ""))
     .map((g) => g.cells.map((cell, c) => (c === dateColumn ? "" : cell)));
   const guess = guessMapping({ data: rows, offset: 0 });
   const columnOf = (field: string) => {

@@ -2,7 +2,14 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer as createHttpServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { extname, join } from "node:path";
-import { processCsv, type SourceDraft, validateSource } from "statement-core";
+import {
+  getApproach,
+  type ProcessResult,
+  processCsv,
+  type SourceDraft,
+  validateSource,
+} from "statement-core";
+import { PdfReadError, readPdfPages } from "statement-pdf";
 import {
   type ActualClient,
   createActualClient,
@@ -206,11 +213,51 @@ async function handleSources(
         sendJson(res, 404, { error: `No source "${id}"` });
         return;
       }
-      let body: { account?: unknown; content?: unknown };
+      let body: {
+        account?: unknown;
+        content?: unknown;
+        contentBase64?: unknown;
+      };
       try {
         body = JSON.parse(await readBody(req));
       } catch {
         sendJson(res, 400, { error: "Body must be valid JSON" });
+        return;
+      }
+      if (type.format === "pdf") {
+        if (
+          typeof body.account !== "string" ||
+          typeof body.contentBase64 !== "string"
+        ) {
+          sendJson(res, 400, {
+            error: 'Body must include string "account" and "contentBase64"',
+          });
+          return;
+        }
+        const approach = getApproach(type.approach);
+        if (!approach) {
+          sendJson(res, 400, {
+            error: `Unknown extraction approach "${type.approach}"`,
+          });
+          return;
+        }
+        try {
+          const pages = await readPdfPages(
+            Buffer.from(body.contentBase64, "base64"),
+          );
+          const result: ProcessResult = approach.run(
+            pages,
+            type.config,
+            body.account,
+          );
+          sendJson(res, 200, result);
+        } catch (error) {
+          if (error instanceof PdfReadError) {
+            sendJson(res, 400, { error: error.message, code: error.code });
+            return;
+          }
+          throw error;
+        }
         return;
       }
       if (

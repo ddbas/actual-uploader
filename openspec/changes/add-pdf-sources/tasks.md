@@ -7,7 +7,7 @@
       `interpretRow` before flip-amount, and validate it (non-empty, not digits
       or separators) in `validateSource`; verify new unit tests cover the "CR",
       thousands-space, flip and invalid-marker scenarios.
-- [ ] 1.3 Add the credit marker control to the CSV wizard amount options
+- [x] 1.3 Add the credit marker control to the CSV wizard amount options
       (`apps/dashboard/src/SourceWizard.tsx`) and verify a component test shows
       "59,00" and "113,83CR" previewed as outflow and inflow.
 
@@ -57,10 +57,10 @@
 
 ## 5. statement-pdf package
 
-- [ ] 5.1 Create `packages/statement-pdf` (workspace, tsconfig, tsup, vitest,
+- [x] 5.1 Create `packages/statement-pdf` (workspace, tsconfig, tsup, vitest,
       turbo wiring) depending on `pdfjs-dist`; verify `mise run build` builds
       it.
-- [ ] 5.2 Implement bytes → pages of positioned text items for Node and the
+- [x] 5.2 Implement bytes → pages of positioned text items for Node and the
       browser, with typed errors for encrypted and no-text PDFs; verify tests
       using a small generated PDF and error cases.
 - [ ] 5.3 Configure pdfjs font data for Node and the Docker image, and verify
@@ -69,48 +69,48 @@
 
 ## 6. Server
 
-- [ ] 6.1 Accept PDF sources in `POST /api/sources` using the shared validation;
+- [x] 6.1 Accept PDF sources in `POST /api/sources` using the shared validation;
       verify tests for stored, invalid-config and unknown-approach cases.
-- [ ] 6.2 Add the PDF branch to `POST /api/sources/:id/process` (base64 body →
+- [x] 6.2 Add the PDF branch to `POST /api/sources/:id/process` (base64 body →
       items → approach `run`), return `warnings`, and map read failures to 4xx
       with a reason; verify endpoint tests for success, not-a-PDF, encrypted and
       no-text.
-- [ ] 6.3 Verify a data file written before this change loads and its CSV
+- [x] 6.3 Verify a data file written before this change loads and its CSV
       sources process unchanged.
 
 ## 7. Dashboard: PDF source setup
 
-- [ ] 7.1 Split the CSV mapping step (field selects, layout options, mapped
+- [x] 7.1 Split the CSV mapping step (field selects, layout options, mapped
       preview) out of `SourceWizard.tsx` into a reusable component without
       changing CSV behaviour; verify the existing wizard tests pass unmodified.
-- [ ] 7.2 Add the format choice (CSV or PDF) and the PDF setup shell: example
+- [x] 7.2 Add the format choice (CSV or PDF) and the PDF setup shell: example
       PDF upload, reading via `statement-pdf`, page display with navigation and
       the unreadable/encrypted messages; verify component tests for each
       scenario.
-- [ ] 7.3 Add the approach select, the editor registry typed as a complete
+- [x] 7.3 Add the approach select, the editor registry typed as a complete
       record over registered approaches, and the per-approach config store;
       verify a test that switching away and back restores settings and that a
       missing editor fails type-checking.
-- [ ] 7.4 Build the Aligned columns editor: page overlay with draggable, addable
+- [x] 7.4 Build the Aligned columns editor: page overlay with draggable, addable
       and removable dividers in PDF points, suggested defaults and zoom
       independence; verify component tests and a manual check that a divider
       stays over the same text when zooming.
-- [ ] 7.5 Compose the mapping step into the editor, including the year-less date
+- [x] 7.5 Compose the mapping step into the editor, including the year-less date
       formats and the year click (highlight, reject text without a year, block
       save until chosen); verify component tests for each scenario.
-- [ ] 7.6 Show the shell's transaction preview from the approach's `run` on the
+- [x] 7.6 Show the shell's transaction preview from the approach's `run` on the
       current config, and the save action with validation; verify a test that
       the preview equals the transactions the server returns for the same PDF.
 
 ## 8. Upload tab
 
-- [ ] 8.1 Accept PDFs for PDF sources, send them as base64, and show `warnings`
+- [x] 8.1 Accept PDFs for PDF sources, send them as base64, and show `warnings`
       and read errors with each file's results; verify component tests for each
       scenario in the `crawler-dashboard` delta.
 
 ## 9. Wrap-up
 
-- [ ] 9.1 Update `README.md` for PDF sources and approaches, and note extending
+- [x] 9.1 Update `README.md` for PDF sources and approaches, and note extending
       with a new approach in `CONTRIBUTING.md`; verify the docs describe the
       registry and editor steps.
 - [ ] 9.2 Run the full `mise run test` and `mise run build`, then try the
