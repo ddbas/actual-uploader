@@ -4,6 +4,7 @@ import {
   ConfigError,
   resolveActualEnv,
   resolveDataDir,
+  resolveLogLevel,
   resolvePort,
 } from "./config.js";
 
@@ -74,5 +75,24 @@ describe("resolveActualEnv", () => {
         ConfigError,
       );
     }
+  });
+});
+
+describe("resolveLogLevel", () => {
+  it("defaults to info", () => {
+    expect(resolveLogLevel({})).toBe("info");
+    expect(resolveLogLevel({ LOG_LEVEL: "" })).toBe("info");
+  });
+
+  it("accepts supported levels case-insensitively", () => {
+    expect(resolveLogLevel({ LOG_LEVEL: "DEBUG" })).toBe("debug");
+    expect(resolveLogLevel({ LOG_LEVEL: " warn " })).toBe("warn");
+    expect(resolveLogLevel({ LOG_LEVEL: "error" })).toBe("error");
+  });
+
+  it("rejects unsupported values", () => {
+    expect(() => resolveLogLevel({ LOG_LEVEL: "verbose" })).toThrow(
+      ConfigError,
+    );
   });
 });

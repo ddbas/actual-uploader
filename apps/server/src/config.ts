@@ -61,3 +61,21 @@ export function resolveActualEnv(env: Env): {
     out.encryptionPassword = env.ACTUAL_ENCRYPTION_PASSWORD;
   return out;
 }
+
+export const LOG_LEVELS = ["debug", "info", "warn", "error"] as const;
+export type LogLevel = (typeof LOG_LEVELS)[number];
+
+/**
+ * Resolves the log level from `LOG_LEVEL` (case-insensitive). Unset or empty
+ * means `info`. Throws a `ConfigError` for unsupported values.
+ */
+export function resolveLogLevel(env: Env): LogLevel {
+  const raw = env.LOG_LEVEL?.trim().toLowerCase();
+  if (!raw) return "info";
+  if (!(LOG_LEVELS as readonly string[]).includes(raw)) {
+    throw new ConfigError(
+      `Invalid LOG_LEVEL: ${env.LOG_LEVEL} (must be one of ${LOG_LEVELS.join(", ")})`,
+    );
+  }
+  return raw as LogLevel;
+}

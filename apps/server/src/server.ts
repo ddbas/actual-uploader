@@ -16,6 +16,7 @@ import {
   type ImportTransaction,
 } from "./actualClient.js";
 import { ActualSettingsStore } from "./actualSettingsStore.js";
+import { type Logger, silentLogger } from "./logger.js";
 import { SourceStore } from "./sourceStore.js";
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -39,6 +40,8 @@ export interface CreateServerOptions {
   actualClient?: ActualClient;
   /** Cache directory for the real Actual client's budget downloads. */
   actualDataDir?: string;
+  /** Logger. Defaults to a silent one. */
+  logger?: Logger;
 }
 
 export interface AccountCrawlerServer {
@@ -97,23 +100,55 @@ function serveStatic(
 export function createServer(
   options: CreateServerOptions,
 ): AccountCrawlerServer {
-  const sources = options.sources ?? new SourceStore();
-  const actualSettings = options.actualSettings ?? new ActualSettingsStore();
+  const rootLogger = options.logger ?? silentLogger;
+  const log = rootLogger.child({ component: "http" });
+  const sources =
+    options.sources ??
+    new SourceStore(undefined, rootLogger.child({ component: "sources" }));
+  const actualSettings =
+    options.actualSettings ??
+    new ActualSettingsStore(
+      undefined,
+      {},
+      rootLogger.child({ component: "settings" }),
+    );
   const actualClient =
     options.actualClient ??
     createActualClient({
       getSettings: () => actualSettings.getSecret(),
       dataDir:
         options.actualDataDir ?? join(tmpdir(), "account-crawler-actual"),
+      logger: rootLogger.child({ component: "actual" }),
     });
 
   const server = createHttpServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
+    const started = Date.now();
+    res.on("finish", () => {
+      const status = res.statusCode;
+      const entry = {
+        method: req.method,
+        path: url.pathname,
+        status,
+        durationMs: Date.now() - started,
+      };
+      // 502 is an Actual failure the client already logged as a warning.
+      if (status === 502) log.warn(entry, "Upstream request failed");
+      else if (status >= 500) log.error(entry, "Request failed");
+      else if (status >= 400) log.warn(entry, "Request rejected");
+      else if (url.pathname.startsWith("/api/") && req.method !== "GET")
+        log.info(entry, "Request completed");
+      else log.debug(entry, "Request completed");
+    });
+    const internalError = (route: string) => (error: unknown) => {
+      log.error({ err: error, route }, "Unhandled error in request handler");
+      if (!res.headersSent) sendJson(res, 500, { error: "Internal error" });
+    };
 
     if (url.pathname.startsWith("/api/sources")) {
-      handleSources(req, res, url.pathname, sources).catch(() => {
-        sendJson(res, 500, { error: "Internal error" });
-      });
+      handleSources(req, res, url.pathname, sources, log).catch(
+        internalError("sources"),
+      );
       return;
     }
 
@@ -139,16 +174,14 @@ export function createServer(
     }
 
     if (url.pathname === "/api/actual/import") {
-      handleImport(req, res, actualClient).catch(() => {
-        sendJson(res, 500, { error: "Internal error" });
-      });
+      handleImport(req, res, actualClient, log).catch(internalError("import"));
       return;
     }
 
     if (url.pathname === "/api/settings/actual") {
-      handleActualSettings(req, res, actualSettings).catch(() => {
-        sendJson(res, 500, { error: "Internal error" });
-      });
+      handleActualSettings(req, res, actualSettings, log).catch(
+        internalError("settings"),
+      );
       return;
     }
 
@@ -169,6 +202,7 @@ async function handleSources(
   res: import("node:http").ServerResponse,
   pathname: string,
   store: SourceStore,
+  log: Logger,
 ): Promise<void> {
   if (pathname === "/api/sources") {
     if (req.method === "GET") {
@@ -185,13 +219,16 @@ async function handleSources(
       }
       const errors = validateSource(body);
       if (errors.length > 0) {
+        log.warn({ errors }, "Source rejected: validation failed");
         sendJson(res, 400, { errors });
         return;
       }
       const { id: _ignored, ...draft } = body as SourceDraft & {
         id?: string;
       };
-      sendJson(res, 201, store.add(draft));
+      const created = store.add(draft);
+      log.info({ sourceId: created.id }, "Source created");
+      sendJson(res, 201, created);
       return;
     }
   }
@@ -201,6 +238,7 @@ async function handleSources(
     const id = decodeURIComponent(match[1] ?? "");
     if (!match[2] && req.method === "DELETE") {
       if (store.remove(id)) {
+        log.info({ sourceId: id }, "Source deleted");
         sendJson(res, 200, { deleted: id });
       } else {
         sendJson(res, 404, { error: `No source "${id}"` });
@@ -250,9 +288,17 @@ async function handleSources(
             type.config,
             body.account,
           );
+          log.debug(
+            { sourceId: id, format: "pdf", pages: pages.length },
+            "Statement processed",
+          );
           sendJson(res, 200, result);
         } catch (error) {
           if (error instanceof PdfReadError) {
+            log.warn(
+              { sourceId: id, code: error.code },
+              "PDF could not be read",
+            );
             sendJson(res, 400, { error: error.message, code: error.code });
             return;
           }
@@ -269,7 +315,9 @@ async function handleSources(
         });
         return;
       }
-      sendJson(res, 200, processCsv(type, body.content, body.account));
+      const processed = processCsv(type, body.content, body.account);
+      log.debug({ sourceId: id, format: "csv" }, "Statement processed");
+      sendJson(res, 200, processed);
       return;
     }
   }
@@ -280,6 +328,7 @@ async function handleActualSettings(
   req: import("node:http").IncomingMessage,
   res: import("node:http").ServerResponse,
   store: ActualSettingsStore,
+  log: Logger,
 ): Promise<void> {
   if (req.method === "GET") {
     sendJson(res, 200, store.get());
@@ -295,6 +344,7 @@ async function handleActualSettings(
     }
     const errors = store.update(body);
     if (Object.keys(errors).length > 0) {
+      log.warn({ fields: Object.keys(errors) }, "Settings update rejected");
       sendJson(res, 400, { errors });
       return;
     }
@@ -312,6 +362,7 @@ async function handleImport(
   req: import("node:http").IncomingMessage,
   res: import("node:http").ServerResponse,
   client: ActualClient,
+  log: Logger,
 ): Promise<void> {
   if (req.method !== "POST") {
     sendJson(res, 405, { error: "Method not allowed" });
@@ -337,6 +388,7 @@ async function handleImport(
         typeof t.date === "string",
     )
   ) {
+    log.warn("Import rejected: invalid transactions payload");
     sendJson(res, 400, {
       error:
         'Body must include a non-empty "transactions" array, each with string "account" and "date"',
@@ -344,6 +396,7 @@ async function handleImport(
     return;
   }
   try {
+    log.debug({ count: txs.length }, "Import requested");
     sendJson(
       res,
       200,
