@@ -15,4 +15,4 @@
 
 ## 3. Wrap-up
 
-- [ ] 3.1 Run `mise` lint/test tasks and confirm they pass
+- [x] 3.1 Run `mise` lint/test tasks and confirm they pass
