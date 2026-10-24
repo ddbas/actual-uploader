@@ -14,6 +14,12 @@ beforeEach(() => {
               syncId: "",
               hasServerPassword: false,
               hasEncryptionPassword: false,
+              locked: {
+                serverUrl: false,
+                serverPassword: false,
+                syncId: false,
+                encryptionPassword: false,
+              },
             }),
           )
         : new Response("[]"),

@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { type ActualApi, createActualClient } from "./actualClient.js";
-import type { ActualSettings } from "./actualSettingsStore.js";
+import {
+  type ActualSettings,
+  ActualSettingsStore,
+} from "./actualSettingsStore.js";
 
 const settings: ActualSettings = {
   serverUrl: "https://actual.example.com",
@@ -60,6 +63,29 @@ describe("actual client", () => {
     expect(status.connected).toBe(false);
     expect(status.error).toBe("bad key *** / ***");
     expect(api.shutdown).toHaveBeenCalledOnce();
+  });
+
+  it("masks env-provided passwords in errors", async () => {
+    const store = new ActualSettingsStore(undefined, {
+      serverPassword: "env-pw",
+      encryptionPassword: "env-e2e",
+    });
+    const api = fakeApi({
+      init: vi.fn(async () => {
+        throw new Error("denied env-pw env-e2e");
+      }),
+    });
+    const client = createActualClient({
+      getSettings: () => ({
+        ...store.getSecret(),
+        serverUrl: "https://a.b",
+        syncId: "s",
+      }),
+      dataDir: "/tmp/x",
+      loadApi: async () => api,
+      timeoutMs: 50,
+    });
+    expect((await client.getStatus()).error).toBe("denied *** ***");
   });
 
   it("is not connected without contacting the network when incomplete", async () => {

@@ -20,6 +20,8 @@ export interface ActualSettingsView {
   syncId: string;
   hasServerPassword: boolean;
   hasEncryptionPassword: boolean;
+  /** True per field when its value comes from the environment. */
+  locked: Record<keyof ActualSettings, boolean>;
 }
 
 /** Update payload; omitted passwords keep their stored value. */
@@ -90,11 +92,24 @@ export function validateActualSettings(
   return errors;
 }
 
-/** Stores Actual connection settings, optionally persisted to a 0600 JSON file. */
+const FIELDS = [
+  "serverUrl",
+  "serverPassword",
+  "syncId",
+  "encryptionPassword",
+] as const;
+
+/**
+ * Stores Actual connection settings, optionally persisted to a 0600 JSON file.
+ * `envOverrides` take precedence per field and are never persisted.
+ */
 export class ActualSettingsStore {
   private settings: ActualSettings = { ...EMPTY };
 
-  constructor(private readonly filePath?: string) {
+  constructor(
+    private readonly filePath?: string,
+    private readonly envOverrides: Partial<ActualSettings> = {},
+  ) {
     if (filePath && existsSync(filePath)) {
       this.settings = {
         ...EMPTY,
@@ -103,28 +118,55 @@ export class ActualSettingsStore {
     }
   }
 
+  private isLocked(field: keyof ActualSettings): boolean {
+    return !!this.envOverrides[field];
+  }
+
   /** Full settings including secrets, for server-internal use only. */
   getSecret(): ActualSettings {
-    return { ...this.settings };
+    const merged = { ...this.settings };
+    for (const f of FIELDS) {
+      const v = this.envOverrides[f];
+      if (v) merged[f] = v;
+    }
+    return merged;
   }
 
   get(): ActualSettingsView {
+    const s = this.getSecret();
     return {
-      serverUrl: this.settings.serverUrl,
-      syncId: this.settings.syncId,
-      hasServerPassword: this.settings.serverPassword !== "",
-      hasEncryptionPassword: this.settings.encryptionPassword !== "",
+      serverUrl: s.serverUrl,
+      syncId: s.syncId,
+      hasServerPassword: s.serverPassword !== "",
+      hasEncryptionPassword: s.encryptionPassword !== "",
+      locked: {
+        serverUrl: this.isLocked("serverUrl"),
+        serverPassword: this.isLocked("serverPassword"),
+        syncId: this.isLocked("syncId"),
+        encryptionPassword: this.isLocked("encryptionPassword"),
+      },
     };
   }
 
   /** Returns field errors, or an empty object after saving. */
   update(input: unknown): Record<string, string> {
-    const errors = validateActualSettings(input, this.settings);
+    const body = {
+      ...(input && typeof input === "object" ? input : {}),
+    } as Record<string, unknown>;
+    // Locked fields are ignored; locked required fields count as satisfied.
+    for (const f of FIELDS) if (this.isLocked(f)) delete body[f];
+    if (this.isLocked("serverUrl"))
+      body.serverUrl = this.envOverrides.serverUrl;
+    if (this.isLocked("syncId")) body.syncId = this.envOverrides.syncId;
+
+    const errors = validateActualSettings(body, this.getSecret());
     if (Object.keys(errors).length > 0) return errors;
-    const u = input as ActualSettingsUpdate;
+    const u = body as unknown as ActualSettingsUpdate;
     this.settings = {
-      serverUrl: u.serverUrl.trim(),
-      syncId: u.syncId.trim(),
+      serverUrl: this.isLocked("serverUrl")
+        ? this.settings.serverUrl
+        : u.serverUrl.trim(),
+      syncId: this.isLocked("syncId") ? this.settings.syncId : u.syncId.trim(),
       serverPassword: u.serverPassword ?? this.settings.serverPassword,
       encryptionPassword:
         u.encryptionPassword ?? this.settings.encryptionPassword,

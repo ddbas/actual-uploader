@@ -94,6 +94,13 @@ export interface ActualSettingsView {
   syncId: string;
   hasServerPassword: boolean;
   hasEncryptionPassword: boolean;
+  /** True per field when its value is provided by the server environment. */
+  locked: {
+    serverUrl: boolean;
+    serverPassword: boolean;
+    syncId: boolean;
+    encryptionPassword: boolean;
+  };
 }
 
 export interface ActualSettingsUpdate {

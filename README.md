@@ -42,6 +42,26 @@ header shows whether the connection works. The server uses the official
 `@actual-app/api` package, so its version should match your Actual server's
 version; a mismatch shows up as the reason next to "Not connected".
 
+The Actual connection can also be preconfigured with environment variables:
+`ACTUAL_SERVER_URL`, `ACTUAL_SERVER_PASSWORD`, `ACTUAL_SYNC_ID` and (optional)
+`ACTUAL_ENCRYPTION_PASSWORD`. Empty values count as unset. Each provided value
+overrides the one saved in the dashboard for that field, is kept in memory only
+(never written to disk), and is shown read-only as "Set by environment". Fields
+that are not provided stay editable. An invalid `ACTUAL_SERVER_URL` (not
+http/https) stops the server at startup.
+
+```sh
+docker run -p 8080:8080 \
+  -e ACTUAL_SERVER_URL=https://actual.example.com \
+  -e ACTUAL_SERVER_PASSWORD=... \
+  -e ACTUAL_SYNC_ID=... \
+  account-crawler
+```
+
+Note: plain environment variables are visible via `docker inspect` and `/proc`.
+Prefer `--env-file` or your orchestrator's secret injection over inline values
+in shell history or committed compose files.
+
 Persisted data (sources, Actual settings, Actual cache) is stored in
 `~/.account-crawler` by default. Override it with the `DATA_DIR` environment
 variable. The listen port is set with `PORT` (default: a random free port) and
