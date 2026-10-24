@@ -60,6 +60,12 @@ describe("App", () => {
               syncId: "s",
               hasServerPassword: true,
               hasEncryptionPassword: false,
+              locked: {
+                serverUrl: false,
+                serverPassword: false,
+                syncId: false,
+                encryptionPassword: false,
+              },
             }),
           );
         }

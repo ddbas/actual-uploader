@@ -22,6 +22,15 @@
       "inputs": ["**/*.md", ".prettierrc.json", ".prettierignore"]
     },
     "dev": {
+      "passThroughEnv": [
+        "ACTUAL_SERVER_URL",
+        "ACTUAL_SERVER_PASSWORD",
+        "ACTUAL_SYNC_ID",
+        "ACTUAL_ENCRYPTION_PASSWORD",
+        "DATA_DIR",
+        "HOST",
+        "PORT"
+      ],
       "persistent": true,
       "cache": false
     }

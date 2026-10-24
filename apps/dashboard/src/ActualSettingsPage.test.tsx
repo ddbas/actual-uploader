@@ -3,6 +3,12 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ActualSettingsPage } from "./ActualSettingsPage.js";
 
+const noLocks = {
+  serverUrl: false,
+  serverPassword: false,
+  syncId: false,
+  encryptionPassword: false,
+};
 let puts: Record<string, unknown>[];
 let current: Record<string, unknown>;
 
@@ -13,6 +19,7 @@ beforeEach(() => {
     syncId: "",
     hasServerPassword: false,
     hasEncryptionPassword: false,
+    locked: noLocks,
   };
   vi.stubGlobal(
     "fetch",
@@ -70,6 +77,7 @@ describe("ActualSettingsPage", () => {
       syncId: "abc",
       hasServerPassword: true,
       hasEncryptionPassword: false,
+      locked: noLocks,
     };
     render(<ActualSettingsPage />);
     await waitFor(() =>
@@ -79,5 +87,48 @@ describe("ActualSettingsPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
     await screen.findByText("Settings saved.");
     expect(puts).toEqual([{ serverUrl: "https://x.y", syncId: "abc" }]);
+  });
+
+  it("locks env-provided fields and omits them from the PUT", async () => {
+    current = {
+      serverUrl: "https://env.example",
+      syncId: "env-sync",
+      hasServerPassword: false,
+      hasEncryptionPassword: false,
+      locked: { ...noLocks, serverUrl: true, syncId: true },
+    };
+    render(<ActualSettingsPage />);
+    await waitFor(() =>
+      expect(screen.getByLabelText(/Server URL/)).toHaveValue(
+        "https://env.example",
+      ),
+    );
+    expect(screen.getByLabelText(/Server URL/)).toBeDisabled();
+    expect(screen.getByLabelText(/Sync ID/)).toBeDisabled();
+    expect(screen.getByLabelText(/Server password/)).toBeEnabled();
+    await userEvent.type(screen.getByLabelText(/Server password/), "pw");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await screen.findByText("Settings saved.");
+    expect(puts).toEqual([{ serverPassword: "pw" }]);
+  });
+
+  it("disables Save when everything is locked", async () => {
+    current = {
+      serverUrl: "https://env.example",
+      syncId: "s",
+      hasServerPassword: true,
+      hasEncryptionPassword: true,
+      locked: {
+        serverUrl: true,
+        serverPassword: true,
+        syncId: true,
+        encryptionPassword: true,
+      },
+    };
+    render(<ActualSettingsPage />);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Save" })).toBeDisabled(),
+    );
+    expect(screen.getByLabelText(/Server password/)).toHaveValue("");
   });
 });
