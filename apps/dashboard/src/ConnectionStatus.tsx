@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { type ActualStatus, fetchActualStatus } from "./api.js";
 
-const POLL_MS = 30_000;
+const POLL_MS = 60_000;
 
 const STATUS_CLASS = {
   checking: "status-neutral",
@@ -16,16 +16,37 @@ export function ConnectionStatus({ refreshKey = 0 }: { refreshKey?: number }) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: refreshKey re-triggers the check
   useEffect(() => {
     let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let nextAllowed = 0;
     setStatus(null);
-    const check = () =>
-      fetchActualStatus().then((s) => {
-        if (active) setStatus(s);
-      });
-    check();
-    const id = setInterval(check, POLL_MS);
+    const schedule = (delayMs: number) => {
+      clearTimeout(timer);
+      timer = setTimeout(tick, delayMs);
+    };
+    const check = async () => {
+      const s = await fetchActualStatus();
+      if (!active) return;
+      setStatus(s);
+      const wait = Math.max(POLL_MS, (s.retryAfterSeconds ?? 0) * 1000);
+      nextAllowed = Date.now() + wait;
+      schedule(wait);
+    };
+    const tick = () => {
+      // Paused while hidden; visibilitychange re-checks.
+      if (document.hidden) return;
+      void check();
+    };
+    const onVisible = () => {
+      if (document.hidden) return;
+      if (Date.now() >= nextAllowed) void check();
+      else schedule(nextAllowed - Date.now());
+    };
+    void check();
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       active = false;
-      clearInterval(id);
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [refreshKey]);
 

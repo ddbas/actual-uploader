@@ -38,11 +38,51 @@ describe("ConnectionStatus", () => {
     await act(async () => {});
     expect(fn).toHaveBeenCalledTimes(1);
     await act(async () => {
-      vi.advanceTimersByTime(30_000);
+      vi.advanceTimersByTime(60_000);
     });
     expect(fn).toHaveBeenCalledTimes(2);
     rerender(<ConnectionStatus refreshKey={1} />);
     await act(async () => {});
     expect(fn).toHaveBeenCalledTimes(3);
+  });
+
+  it("pauses while hidden and re-checks when visible", async () => {
+    vi.useFakeTimers();
+    const fn = stubStatus({ connected: true });
+    let hidden = true;
+    vi.spyOn(document, "hidden", "get").mockImplementation(() => hidden);
+    render(<ConnectionStatus />);
+    await act(async () => {});
+    expect(fn).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      vi.advanceTimersByTime(120_000);
+    });
+    expect(fn).toHaveBeenCalledTimes(1);
+    hidden = false;
+    await act(async () => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
+
+  it("honors retryAfterSeconds and shows the reason", async () => {
+    vi.useFakeTimers();
+    const msg = "Actual is rate-limiting logins; retrying in 120 s.";
+    const fn = stubStatus({
+      connected: false,
+      error: msg,
+      retryAfterSeconds: 120,
+    });
+    const { container } = render(<ConnectionStatus />);
+    await act(async () => {});
+    expect(container.querySelector(`[title='${msg}']`)).toBeTruthy();
+    await act(async () => {
+      vi.advanceTimersByTime(60_000);
+    });
+    expect(fn).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      vi.advanceTimersByTime(60_000);
+    });
+    expect(fn).toHaveBeenCalledTimes(2);
   });
 });
