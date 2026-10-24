@@ -9,8 +9,10 @@ import {
   ConfigError,
   resolveActualEnv,
   resolveDataDir,
+  resolveLogLevel,
   resolvePort,
 } from "./config.js";
+import { createLogger, type Logger } from "./logger.js";
 import { createServer } from "./server.js";
 import { SourceStore } from "./sourceStore.js";
 
@@ -21,14 +23,18 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // Replace with proper CA trust (NODE_EXTRA_CA_CERTS or a setting) later.
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
+let logger: Logger | undefined;
+
 async function main() {
   let dataDir: string;
   let port: number;
   let actualEnv: ReturnType<typeof resolveActualEnv>;
+  let logLevel: ReturnType<typeof resolveLogLevel>;
   try {
     dataDir = resolveDataDir(process.env, homedir());
     port = resolvePort(process.env);
     actualEnv = resolveActualEnv(process.env);
+    logLevel = resolveLogLevel(process.env);
   } catch (error) {
     if (error instanceof ConfigError) {
       console.error(`Error: ${error.message}`);
@@ -37,17 +43,22 @@ async function main() {
     }
     throw error;
   }
-  console.warn(
-    "WARNING: TLS certificate verification is disabled (temporary).",
-  );
+  logger = createLogger(logLevel);
+  logger.info({ level: logger.level, dataDir }, "Starting Account Crawler");
+  logger.warn("TLS certificate verification is disabled (temporary)");
   const staticDir = join(__dirname, "..", "..", "dashboard", "dist");
   const { server } = createServer({
-    sources: new SourceStore(join(dataDir, "sources.json")),
+    sources: new SourceStore(
+      join(dataDir, "sources.json"),
+      logger.child({ component: "sources" }),
+    ),
     actualSettings: new ActualSettingsStore(
       join(dataDir, "actual-settings.json"),
       actualEnv,
+      logger.child({ component: "settings" }),
     ),
     actualDataDir: join(dataDir, "actual-cache"),
+    logger,
     staticDir: existsSync(staticDir) ? staticDir : undefined,
   });
 
@@ -63,14 +74,20 @@ async function main() {
     typeof address === "object" && address ? address.port : port;
   const url = `http://${host}:${resolvedPort}`;
 
-  console.log(`Account Crawler dashboard running at ${url}`);
+  logger.info({ url }, "Account Crawler dashboard running");
 
   if (!process.env.ACCOUNT_CRAWLER_NO_OPEN) {
+    logger.debug("Opening dashboard in browser");
     await open(url);
   }
 }
 
 main().catch((error) => {
-  console.error("Failed to start Account Crawler:", error);
+  if (logger) {
+    logger.error({ err: error }, "Failed to start Account Crawler");
+  } else {
+    // Config failed before the logger existed.
+    console.error("Failed to start Account Crawler:", error);
+  }
   process.exitCode = 1;
 });

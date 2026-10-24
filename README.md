@@ -71,6 +71,22 @@ the bind address with `HOST` (default: `127.0.0.1`):
 DATA_DIR=/path/to/data PORT=8080 pnpm --filter server start
 ```
 
+### Logging
+
+The server writes structured JSON logs to standard output only (no log files).
+Set the level with `LOG_LEVEL` (`debug`, `info`, `warn` or `error`; default
+`info`). An invalid value stops the server on startup. Secrets, request bodies
+and statement/transaction data are never logged.
+
+To debug a failing Actual connection, use `LOG_LEVEL=debug`: it logs each
+connection phase (`load-api`, `init`, `download-budget`, `operation`) with
+timings, and failures include the phase, error code, and cause chain. For
+readable output, pipe through `pino-pretty`:
+
+```sh
+LOG_LEVEL=debug pnpm --filter server dev | npx pino-pretty
+```
+
 For local development (with hot reload), run the server and dashboard dev
 servers in separate terminals:
 

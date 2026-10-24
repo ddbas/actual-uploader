@@ -6,6 +6,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname } from "node:path";
+import { type Logger, silentLogger } from "./logger.js";
 
 export interface ActualSettings {
   serverUrl: string;
@@ -109,12 +110,23 @@ export class ActualSettingsStore {
   constructor(
     private readonly filePath?: string,
     private readonly envOverrides: Partial<ActualSettings> = {},
+    private readonly log: Logger = silentLogger,
   ) {
     if (filePath && existsSync(filePath)) {
-      this.settings = {
-        ...EMPTY,
-        ...JSON.parse(readFileSync(filePath, "utf8")),
-      };
+      try {
+        this.settings = {
+          ...EMPTY,
+          ...JSON.parse(readFileSync(filePath, "utf8")),
+        };
+      } catch (error) {
+        this.log.error({ err: error, filePath }, "Failed to load settings");
+        throw error;
+      }
+      this.log.debug({ filePath }, "Loaded Actual settings");
+    }
+    const locked = FIELDS.filter((f) => this.isLocked(f));
+    if (locked.length > 0) {
+      this.log.info({ fields: locked }, "Actual settings set from environment");
     }
   }
 
@@ -162,6 +174,7 @@ export class ActualSettingsStore {
     const errors = validateActualSettings(body, this.getSecret());
     if (Object.keys(errors).length > 0) return errors;
     const u = body as unknown as ActualSettingsUpdate;
+    const previous = this.settings;
     this.settings = {
       serverUrl: this.isLocked("serverUrl")
         ? this.settings.serverUrl
@@ -172,15 +185,26 @@ export class ActualSettingsStore {
         u.encryptionPassword ?? this.settings.encryptionPassword,
     };
     this.save();
+    // Field names only: never log values.
+    const changed = FIELDS.filter((f) => previous[f] !== this.settings[f]);
+    this.log.info({ changed }, "Actual settings updated");
     return {};
   }
 
   private save(): void {
     if (!this.filePath) return;
-    mkdirSync(dirname(this.filePath), { recursive: true });
-    writeFileSync(this.filePath, JSON.stringify(this.settings, null, 2), {
-      mode: 0o600,
-    });
-    chmodSync(this.filePath, 0o600);
+    try {
+      mkdirSync(dirname(this.filePath), { recursive: true });
+      writeFileSync(this.filePath, JSON.stringify(this.settings, null, 2), {
+        mode: 0o600,
+      });
+      chmodSync(this.filePath, 0o600);
+    } catch (error) {
+      this.log.error(
+        { err: error, filePath: this.filePath },
+        "Failed to save settings",
+      );
+      throw error;
+    }
   }
 }
