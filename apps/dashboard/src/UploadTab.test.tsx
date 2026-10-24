@@ -127,3 +127,120 @@ describe("UploadTab", () => {
     expect(await screen.findByText(/No sources yet/)).toBeTruthy();
   });
 });
+
+describe("UploadTab with PDF sources", () => {
+  let processBodies: unknown[];
+  let processResponse: () => Response;
+
+  beforeEach(() => {
+    processBodies = [];
+    processResponse = () =>
+      new Response(
+        JSON.stringify({
+          transactions: [
+            { account: "acc-1", date: "2026-01-05", amount: -450 },
+          ],
+          errors: [],
+          warnings: [],
+        }),
+      );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+        if (String(url).endsWith("/process")) {
+          processBodies.push(JSON.parse(init?.body as string));
+          return processResponse();
+        }
+        if (String(url).endsWith("/api/accounts")) {
+          return new Response(
+            JSON.stringify([{ id: "acc-1", name: "Chequing" }]),
+          );
+        }
+        return new Response(
+          JSON.stringify([
+            { id: "csv", name: "Bank CSV", format: "csv" },
+            { id: "pdf", name: "Card PDF", format: "pdf" },
+          ]),
+        );
+      }),
+    );
+  });
+
+  async function choosePdf(
+    user: ReturnType<typeof userEvent.setup>,
+    ...files: File[]
+  ) {
+    await user.selectOptions(await screen.findByLabelText("Source"), "pdf");
+    await user.selectOptions(screen.getByLabelText("Account"), "acc-1");
+    await user.upload(screen.getByLabelText("Statement files"), files);
+    await user.click(screen.getByRole("button", { name: "Process files" }));
+  }
+  const pdf = (name = "a.pdf") =>
+    new File(["%PDF-1.4 hello"], name, { type: "application/pdf" });
+
+  it("accepts PDFs and sends them as base64", async () => {
+    const user = userEvent.setup();
+    render(<UploadTab />);
+    await user.selectOptions(await screen.findByLabelText("Source"), "pdf");
+    expect(
+      (screen.getByLabelText("Statement files") as HTMLInputElement).accept,
+    ).toContain(".pdf");
+    await user.selectOptions(await screen.findByLabelText("Source"), "csv");
+    expect(
+      (screen.getByLabelText("Statement files") as HTMLInputElement).accept,
+    ).toContain(".csv");
+
+    await choosePdf(user, pdf());
+    expect(await screen.findByText("2026-01-05")).toBeTruthy();
+    expect(processBodies).toEqual([
+      {
+        account: "acc-1",
+        contentBase64: btoa("%PDF-1.4 hello"),
+      },
+    ]);
+  });
+
+  it("shows warnings with the file's results", async () => {
+    processResponse = () =>
+      new Response(
+        JSON.stringify({
+          transactions: [],
+          errors: [],
+          warnings: ["No transactions found: no line has a date"],
+        }),
+      );
+    const user = userEvent.setup();
+    render(<UploadTab />);
+    await choosePdf(user, pdf());
+    expect(
+      (await screen.findByText(/a\.pdf: No transactions found/)).textContent,
+    ).toContain("no line has a date");
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Upload to Actual",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+  });
+
+  it("names the reason an unreadable PDF failed, per file", async () => {
+    let calls = 0;
+    const ok = processResponse;
+    processResponse = () =>
+      ++calls === 1
+        ? new Response(
+            JSON.stringify({ error: "The PDF is password-protected" }),
+            { status: 400 },
+          )
+        : ok();
+    const user = userEvent.setup();
+    render(<UploadTab />);
+    await choosePdf(user, pdf("locked.pdf"), pdf("fine.pdf"));
+    expect(
+      (await screen.findByText(/locked\.pdf: The PDF is password-protected/))
+        .textContent,
+    ).toBeTruthy();
+    expect(screen.getByText("2026-01-05")).toBeTruthy();
+  });
+});

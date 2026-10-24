@@ -6,12 +6,24 @@ import {
   fetchSources,
   importTransactions,
   type ProcessedFile,
+  processPdfStatement,
   processStatement,
 } from "./api.js";
 import type { Transaction } from "./types.js";
 
 interface FileResult extends ProcessedFile {
   fileName: string;
+  /** Why the file could not be read at all (PDFs). */
+  readError?: string;
+}
+
+function toBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
 }
 
 const formatAmount = (cents: number | undefined): string =>
@@ -41,6 +53,8 @@ export function UploadTab() {
 
   const transactions: Transaction[] =
     results?.flatMap((r) => r.transactions) ?? [];
+  const source = sources?.find((s) => s.id === sourceId);
+  const isPdf = source?.format === "pdf";
   const canProcess =
     sourceId !== "" && account !== "" && files.length > 0 && !processing;
 
@@ -52,6 +66,26 @@ export function UploadTab() {
     try {
       const out: FileResult[] = [];
       for (const file of files) {
+        if (isPdf) {
+          // An unreadable PDF is reported against its file, not the batch.
+          try {
+            const processed = await processPdfStatement(
+              sourceId,
+              account,
+              toBase64(await file.arrayBuffer()),
+            );
+            out.push({ fileName: file.name, ...processed });
+          } catch (err) {
+            out.push({
+              fileName: file.name,
+              transactions: [],
+              errors: [],
+              readError:
+                err instanceof Error ? err.message : "Failed to process file",
+            });
+          }
+          continue;
+        }
         const processed = await processStatement(
           sourceId,
           account,
@@ -111,6 +145,28 @@ export function UploadTab() {
       <section aria-label="Upload">
         <h2 className="mb-4 text-xl font-semibold">Review transactions</h2>
         {results.map((r) =>
+          r.readError ? (
+            <div
+              key={`${r.fileName}-read`}
+              className="alert alert-error mb-4"
+              role="alert"
+            >
+              {r.fileName}: {r.readError}
+            </div>
+          ) : null,
+        )}
+        {results.flatMap((r) =>
+          (r.warnings ?? []).map((w) => (
+            <div
+              key={`${r.fileName}-${w}`}
+              className="alert alert-warning mb-4"
+              role="status"
+            >
+              {r.fileName}: {w}
+            </div>
+          )),
+        )}
+        {results.map((r) =>
           r.errors.length > 0 ? (
             <div
               key={r.fileName}
@@ -119,7 +175,10 @@ export function UploadTab() {
             >
               {r.fileName}: {r.errors.length} row
               {r.errors.length === 1 ? "" : "s"} skipped (
-              {r.errors.map((x) => `row ${x.row}: ${x.message}`).join("; ")})
+              {r.errors
+                .map((x) => (x.page ? x.message : `row ${x.row}: ${x.message}`))
+                .join("; ")}
+              )
             </div>
           ) : null,
         )}
@@ -229,7 +288,7 @@ export function UploadTab() {
               type="file"
               className="file-input w-full"
               multiple
-              accept=".csv,text/csv"
+              accept={isPdf ? ".pdf,application/pdf" : ".csv,text/csv"}
               onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
             />
           </label>

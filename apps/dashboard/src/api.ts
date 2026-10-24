@@ -30,7 +30,8 @@ export async function deleteSource(id: string): Promise<void> {
 
 export interface ProcessedFile {
   transactions: Transaction[];
-  errors: { row: number; message: string }[];
+  errors: { row: number; page?: number; message: string }[];
+  warnings?: string[];
 }
 
 export async function processStatement(
@@ -44,6 +45,27 @@ export async function processStatement(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ account, content }),
+    },
+  );
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? "Failed to process file");
+  }
+  return res.json();
+}
+
+/** Processes a PDF statement (sent as base64) with a PDF source. */
+export async function processPdfStatement(
+  sourceId: string,
+  account: string,
+  contentBase64: string,
+): Promise<ProcessedFile> {
+  const res = await fetch(
+    `/api/sources/${encodeURIComponent(sourceId)}/process`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ account, contentBase64 }),
     },
   );
   if (!res.ok) {

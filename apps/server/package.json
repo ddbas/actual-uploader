@@ -17,7 +17,8 @@
   "dependencies": {
     "@actual-app/api": "^26.10.0",
     "open": "^11.0.0",
-    "statement-core": "workspace:*"
+    "statement-core": "workspace:*",
+    "statement-pdf": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

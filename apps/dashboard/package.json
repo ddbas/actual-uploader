@@ -11,9 +11,11 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "pdfjs-dist": "^5.7.284",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "statement-core": "workspace:*"
+    "statement-core": "workspace:*",
+    "statement-pdf": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
