@@ -113,6 +113,6 @@
 - [x] 9.1 Update `README.md` for PDF sources and approaches, and note extending
       with a new approach in `CONTRIBUTING.md`; verify the docs describe the
       registry and editor steps.
-- [ ] 9.2 Run the full `mise run test` and `mise run build`, then try the
+- [x] 9.2 Run the full `mise run test` and `mise run build`, then try the
       fixture flow manually in the dashboard with a real statement; verify
       transactions match the statement and git hooks and CI pass.
