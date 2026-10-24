@@ -23,8 +23,20 @@ export function SettingsTab({ onActualSaved }: SettingsPageProps) {
   const Page = pages.find((p) => p.id === pageId)?.component;
 
   return (
-    <div className="flex items-start gap-6">
-      <nav aria-label="Settings pages">
+    <div className="flex flex-col items-stretch gap-4 md:flex-row md:items-start md:gap-6">
+      <select
+        className="select w-full md:hidden"
+        aria-label="Settings page"
+        value={pageId}
+        onChange={(e) => setPageId(e.target.value)}
+      >
+        {pages.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.label}
+          </option>
+        ))}
+      </select>
+      <nav aria-label="Settings pages" className="hidden md:block">
         <ul className="menu w-40 rounded-box bg-base-200">
           {pages.map((p) => (
             <li key={p.id}>
@@ -40,7 +52,7 @@ export function SettingsTab({ onActualSaved }: SettingsPageProps) {
           ))}
         </ul>
       </nav>
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
         {Page ? <Page onActualSaved={onActualSaved} /> : null}
       </div>
     </div>

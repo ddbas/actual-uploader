@@ -46,4 +46,19 @@ describe("SettingsTab", () => {
     );
     expect(await screen.findByText(/No sources yet/)).toBeTruthy();
   });
+
+  it("select lists the same pages and switches pages", async () => {
+    render(<SettingsTab />);
+    const select = screen.getByRole("combobox", { name: "Settings page" });
+    const options = Array.from(select.querySelectorAll("option")).map(
+      (o) => o.textContent,
+    );
+    expect(options).toEqual(["Actual", "Sources"]);
+    await userEvent.selectOptions(select, "sources");
+    expect(await screen.findByText(/No sources yet/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Sources" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
 });

@@ -10,7 +10,7 @@ export function App() {
   const [statusKey, setStatusKey] = useState(0);
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-8 md:px-6">
       <header className="mb-2 flex justify-end">
         <ConnectionStatus refreshKey={statusKey} />
       </header>
