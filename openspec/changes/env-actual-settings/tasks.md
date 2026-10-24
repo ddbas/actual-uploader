@@ -23,10 +23,10 @@
 
 - [x] 2.1 Add `locked` to `ActualSettingsView` in `apps/dashboard/src/api.ts`
       and verify types compile
-- [x] 2.2 Update `ActualSettingsPage.tsx`: disable locked inputs, show "Set by
-      environment" badge, omit locked fields from PUT, skip required checks for
-      locked fields, disable Save when all are locked; verify
-      `ActualSettingsPage.test.tsx` covers partial and fully-locked cases
+- [x] 2.2 Update `ActualSettingsPage.tsx`: disable locked inputs, omit locked
+      fields from PUT, skip required checks for locked fields, disable Save when
+      all are locked; verify `ActualSettingsPage.test.tsx` covers partial and
+      fully-locked cases
 
 ## 3. Docs and verification
 

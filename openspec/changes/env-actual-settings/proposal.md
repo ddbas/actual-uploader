@@ -13,8 +13,8 @@ container is connected immediately.
 - Environment values take precedence over UI-saved values **per field**. They
   are held in memory only and never written to `actual-settings.json`.
 - Fields supplied by the environment are shown read-only in the Actual settings
-  page with a "Set by environment" hint. Fields not supplied stay editable, so a
-  partial environment (e.g. URL and sync ID only) is valid.
+  page. Fields not supplied stay editable, so a partial environment (e.g. URL
+  and sync ID only) is valid.
 - `GET /api/settings/actual` reports which fields are environment-provided;
   `PUT` ignores locked fields.
 - A malformed `ACTUAL_SERVER_URL` makes the server exit non-zero at startup,

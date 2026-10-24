@@ -46,9 +46,9 @@ The Actual connection can also be preconfigured with environment variables:
 `ACTUAL_SERVER_URL`, `ACTUAL_SERVER_PASSWORD`, `ACTUAL_SYNC_ID` and (optional)
 `ACTUAL_ENCRYPTION_PASSWORD`. Empty values count as unset. Each provided value
 overrides the one saved in the dashboard for that field, is kept in memory only
-(never written to disk), and is shown read-only as "Set by environment". Fields
-that are not provided stay editable. An invalid `ACTUAL_SERVER_URL` (not
-http/https) stops the server at startup.
+(never written to disk), and is shown read-only. Fields that are not provided
+stay editable. An invalid `ACTUAL_SERVER_URL` (not http/https) stops the server
+at startup.
 
 ```sh
 docker run -p 8080:8080 \

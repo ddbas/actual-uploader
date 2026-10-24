@@ -3,18 +3,16 @@
 ### Requirement: Environment-Provided Actual Settings Are Read-Only
 
 When the server is started with a value for an Actual connection setting in its
-environment, the Actual settings page SHALL show that field read-only with a
-"Set by environment" hint. The environment value SHALL take precedence over any
-value saved through the page. Fields without an environment value SHALL remain
-editable, and saving SHALL only affect those fields. Environment-provided
-passwords SHALL NOT be revealed.
+environment, the Actual settings page SHALL show that field read-only. The
+environment value SHALL take precedence over any value saved through the page.
+Fields without an environment value SHALL remain editable, and saving SHALL only
+affect those fields. Environment-provided passwords SHALL NOT be revealed.
 
 #### Scenario: Field set by environment
 
 - **WHEN** the server was started with a server URL in its environment and the
   user opens the Actual settings page
-- **THEN** the server URL field shows that value, is read-only, and is marked
-  "Set by environment"
+- **THEN** the server URL field shows that value, and is read-only
 
 #### Scenario: Environment password stays hidden
 

@@ -106,7 +106,6 @@ describe("ActualSettingsPage", () => {
     expect(screen.getByLabelText(/Server URL/)).toBeDisabled();
     expect(screen.getByLabelText(/Sync ID/)).toBeDisabled();
     expect(screen.getByLabelText(/Server password/)).toBeEnabled();
-    expect(screen.getAllByText("Set by environment")).toHaveLength(2);
     await userEvent.type(screen.getByLabelText(/Server password/), "pw");
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
     await screen.findByText("Settings saved.");

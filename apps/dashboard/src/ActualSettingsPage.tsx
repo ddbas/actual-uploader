@@ -17,12 +17,6 @@ function isHttpUrl(value: string): boolean {
   }
 }
 
-function EnvBadge() {
-  return (
-    <span className="badge badge-neutral badge-sm">Set by environment</span>
-  );
-}
-
 export function ActualSettingsPage({
   onActualSaved,
 }: {
@@ -97,7 +91,6 @@ export function ActualSettingsPage({
     >
       <label className="fieldset">
         <span className="label after:content-['*']">Server URL</span>
-        {locked?.serverUrl ? <EnvBadge /> : null}
         <input
           type="text"
           className="input w-full"
@@ -111,7 +104,6 @@ export function ActualSettingsPage({
       </label>
       <label className="fieldset">
         <span className="label after:content-['*']">Server password</span>
-        {locked?.serverPassword ? <EnvBadge /> : null}
         <input
           type="password"
           className="input w-full"
@@ -133,7 +125,6 @@ export function ActualSettingsPage({
       </label>
       <label className="fieldset">
         <span className="label after:content-['*']">Sync ID</span>
-        {locked?.syncId ? <EnvBadge /> : null}
         <input
           type="text"
           className="input w-full"
@@ -147,7 +138,6 @@ export function ActualSettingsPage({
       </label>
       <label className="fieldset">
         <span className="label">Encryption password (optional)</span>
-        {locked?.encryptionPassword ? <EnvBadge /> : null}
         <input
           type="password"
           className="input w-full"
