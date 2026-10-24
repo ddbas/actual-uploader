@@ -1,6 +1,11 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ConfigError, resolveDataDir, resolvePort } from "./config.js";
+import {
+  ConfigError,
+  resolveActualEnv,
+  resolveDataDir,
+  resolvePort,
+} from "./config.js";
 
 describe("resolveDataDir", () => {
   it("defaults to ~/.account-crawler", () => {
@@ -35,6 +40,39 @@ describe("resolvePort", () => {
   it("rejects invalid values", () => {
     for (const PORT of ["abc", "-1", "65536", "1.5"]) {
       expect(() => resolvePort({ PORT })).toThrow(ConfigError);
+    }
+  });
+});
+
+describe("resolveActualEnv", () => {
+  it("reads all four variables", () => {
+    expect(
+      resolveActualEnv({
+        ACTUAL_SERVER_URL: "https://a.b",
+        ACTUAL_SERVER_PASSWORD: "p",
+        ACTUAL_SYNC_ID: "s",
+        ACTUAL_ENCRYPTION_PASSWORD: "e",
+      }),
+    ).toEqual({
+      serverUrl: "https://a.b",
+      serverPassword: "p",
+      syncId: "s",
+      encryptionPassword: "e",
+    });
+  });
+
+  it("treats empty as unset and allows partial", () => {
+    expect(
+      resolveActualEnv({ ACTUAL_SERVER_URL: "http://a", ACTUAL_SYNC_ID: "" }),
+    ).toEqual({ serverUrl: "http://a" });
+    expect(resolveActualEnv({ ACTUAL_ENCRYPTION_PASSWORD: "" })).toEqual({});
+  });
+
+  it("rejects an invalid server URL", () => {
+    for (const ACTUAL_SERVER_URL of ["ftp://x", "nope"]) {
+      expect(() => resolveActualEnv({ ACTUAL_SERVER_URL })).toThrow(
+        ConfigError,
+      );
     }
   });
 });

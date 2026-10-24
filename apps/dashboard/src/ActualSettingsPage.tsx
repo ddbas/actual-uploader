@@ -28,6 +28,8 @@ export function ActualSettingsPage({
   const [encryptionPassword, setEncryptionPassword] = useState("");
   const [saved, setSaved] = useState<ActualSettingsView | null>(null);
   const [errors, setErrors] = useState<Errors>({});
+  const locked = saved?.locked;
+  const allLocked = !!locked && Object.values(locked).every(Boolean);
   const [confirmation, setConfirmation] = useState(false);
 
   useEffect(() => {
@@ -44,21 +46,27 @@ export function ActualSettingsPage({
     e.preventDefault();
     setConfirmation(false);
     const found: Errors = {};
-    if (!serverUrl.trim()) found.serverUrl = "Server URL is required";
-    else if (!isHttpUrl(serverUrl.trim()))
-      found.serverUrl = "Server URL must be an http or https URL";
-    if (!serverPassword && !saved?.hasServerPassword)
+    if (!locked?.serverUrl) {
+      if (!serverUrl.trim()) found.serverUrl = "Server URL is required";
+      else if (!isHttpUrl(serverUrl.trim()))
+        found.serverUrl = "Server URL must be an http or https URL";
+    }
+    if (!locked?.serverPassword && !serverPassword && !saved?.hasServerPassword)
       found.serverPassword = "Server password is required";
-    if (!syncId.trim()) found.syncId = "Sync ID is required";
+    if (!locked?.syncId && !syncId.trim()) found.syncId = "Sync ID is required";
     setErrors(found);
     if (Object.keys(found).length > 0) return;
 
     try {
       const view = await saveActualSettings({
-        serverUrl: serverUrl.trim(),
-        syncId: syncId.trim(),
-        ...(serverPassword ? { serverPassword } : {}),
-        ...(encryptionPassword ? { encryptionPassword } : {}),
+        ...(locked?.serverUrl ? {} : { serverUrl: serverUrl.trim() }),
+        ...(locked?.syncId ? {} : { syncId: syncId.trim() }),
+        ...(serverPassword && !locked?.serverPassword
+          ? { serverPassword }
+          : {}),
+        ...(encryptionPassword && !locked?.encryptionPassword
+          ? { encryptionPassword }
+          : {}),
       });
       setSaved(view);
       setServerPassword("");
@@ -87,6 +95,7 @@ export function ActualSettingsPage({
           type="text"
           className="input w-full"
           value={serverUrl}
+          disabled={locked?.serverUrl}
           onChange={(e) => setServerUrl(e.target.value)}
         />
         {errors.serverUrl ? (
@@ -100,7 +109,14 @@ export function ActualSettingsPage({
           className="input w-full"
           autoComplete="off"
           value={serverPassword}
-          placeholder={saved?.hasServerPassword ? "•••••••• (saved)" : ""}
+          disabled={locked?.serverPassword}
+          placeholder={
+            saved?.hasServerPassword
+              ? locked?.serverPassword
+                ? "•••••••• (set)"
+                : "•••••••• (saved)"
+              : ""
+          }
           onChange={(e) => setServerPassword(e.target.value)}
         />
         {errors.serverPassword ? (
@@ -113,6 +129,7 @@ export function ActualSettingsPage({
           type="text"
           className="input w-full"
           value={syncId}
+          disabled={locked?.syncId}
           onChange={(e) => setSyncId(e.target.value)}
         />
         {errors.syncId ? (
@@ -126,13 +143,20 @@ export function ActualSettingsPage({
           className="input w-full"
           autoComplete="off"
           value={encryptionPassword}
-          placeholder={saved?.hasEncryptionPassword ? "•••••••• (saved)" : ""}
+          disabled={locked?.encryptionPassword}
+          placeholder={
+            saved?.hasEncryptionPassword
+              ? locked?.encryptionPassword
+                ? "•••••••• (set)"
+                : "•••••••• (saved)"
+              : ""
+          }
           onChange={(e) => setEncryptionPassword(e.target.value)}
         />
       </label>
       {errors.form ? <p className="text-sm text-error">{errors.form}</p> : null}
       <div>
-        <button type="submit" className="btn btn-primary">
+        <button type="submit" className="btn btn-primary" disabled={allLocked}>
           Save
         </button>
       </div>

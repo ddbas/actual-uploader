@@ -5,7 +5,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import open from "open";
 import { ActualSettingsStore } from "./actualSettingsStore.js";
-import { ConfigError, resolveDataDir, resolvePort } from "./config.js";
+import {
+  ConfigError,
+  resolveActualEnv,
+  resolveDataDir,
+  resolvePort,
+} from "./config.js";
 import { createServer } from "./server.js";
 import { SourceStore } from "./sourceStore.js";
 
@@ -19,9 +24,11 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 async function main() {
   let dataDir: string;
   let port: number;
+  let actualEnv: ReturnType<typeof resolveActualEnv>;
   try {
     dataDir = resolveDataDir(process.env, homedir());
     port = resolvePort(process.env);
+    actualEnv = resolveActualEnv(process.env);
   } catch (error) {
     if (error instanceof ConfigError) {
       console.error(`Error: ${error.message}`);
@@ -38,6 +45,7 @@ async function main() {
     sources: new SourceStore(join(dataDir, "sources.json")),
     actualSettings: new ActualSettingsStore(
       join(dataDir, "actual-settings.json"),
+      actualEnv,
     ),
     actualDataDir: join(dataDir, "actual-cache"),
     staticDir: existsSync(staticDir) ? staticDir : undefined,

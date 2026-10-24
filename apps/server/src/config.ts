@@ -29,3 +29,35 @@ export function resolvePort(env: Env): number {
   }
   return port;
 }
+
+/**
+ * Resolves Actual connection overrides from `ACTUAL_*` variables. Empty counts
+ * as unset. Throws a `ConfigError` when `ACTUAL_SERVER_URL` is not http(s).
+ */
+export function resolveActualEnv(env: Env): {
+  serverUrl?: string;
+  serverPassword?: string;
+  syncId?: string;
+  encryptionPassword?: string;
+} {
+  const out: ReturnType<typeof resolveActualEnv> = {};
+  if (env.ACTUAL_SERVER_URL) {
+    const url = env.ACTUAL_SERVER_URL.trim();
+    let protocol = "";
+    try {
+      protocol = new URL(url).protocol;
+    } catch {}
+    if (protocol !== "http:" && protocol !== "https:") {
+      throw new ConfigError(
+        `Invalid ACTUAL_SERVER_URL: ${env.ACTUAL_SERVER_URL} (must be an http or https URL)`,
+      );
+    }
+    out.serverUrl = url;
+  }
+  if (env.ACTUAL_SERVER_PASSWORD)
+    out.serverPassword = env.ACTUAL_SERVER_PASSWORD;
+  if (env.ACTUAL_SYNC_ID) out.syncId = env.ACTUAL_SYNC_ID.trim();
+  if (env.ACTUAL_ENCRYPTION_PASSWORD)
+    out.encryptionPassword = env.ACTUAL_ENCRYPTION_PASSWORD;
+  return out;
+}
