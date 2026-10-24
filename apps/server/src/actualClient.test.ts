@@ -1,9 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
-import { type ActualApi, createActualClient } from "./actualClient.js";
+import { Writable } from "node:stream";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  type ActualApi,
+  ActualRateLimitError,
+  createActualClient,
+} from "./actualClient.js";
 import {
   type ActualSettings,
   ActualSettingsStore,
 } from "./actualSettingsStore.js";
+import { createLogger } from "./logger.js";
 
 const settings: ActualSettings = {
   serverUrl: "https://actual.example.com",
@@ -39,7 +45,7 @@ const make = (api: ActualApi, s: ActualSettings = settings) =>
   });
 
 describe("actual client", () => {
-  it("reports connected and shuts down", async () => {
+  it("reports connected and keeps the session open", async () => {
     const api = fakeApi();
     expect(await make(api).getStatus()).toEqual({ connected: true });
     expect(api.init).toHaveBeenCalledWith({
@@ -50,7 +56,7 @@ describe("actual client", () => {
     expect(api.downloadBudget).toHaveBeenCalledWith("sync-1", {
       password: "e2e-secret",
     });
-    expect(api.shutdown).toHaveBeenCalledOnce();
+    expect(api.shutdown).not.toHaveBeenCalled();
   });
 
   it("reports failure without leaking secrets, and shuts down", async () => {
@@ -135,6 +141,165 @@ describe("actual client", () => {
     });
     const client = make(api);
     await Promise.all([client.getStatus(), client.listAccounts()]);
-    expect(events).toEqual(["start1", "end1", "start2", "end2"]);
+    // The second operation reuses the session instead of logging in again.
+    expect(events).toEqual(["start1", "end1"]);
+  });
+
+  describe("session reuse", () => {
+    afterEach(() => vi.useRealTimers());
+
+    const makeWith = (
+      api: ActualApi,
+      get: () => ActualSettings,
+      extra: Record<string, unknown> = {},
+    ) =>
+      createActualClient({
+        getSettings: get,
+        dataDir: "/tmp/actual-client-test",
+        loadApi: async () => api,
+        timeoutMs: 50,
+        ...extra,
+      });
+
+    it("logs in once for several operations", async () => {
+      const api = fakeApi();
+      const client = make(api);
+      await client.listAccounts();
+      await client.listAccounts();
+      await client.importTransactions([{ account: "a1", date: "2024-01-01" }]);
+      expect(api.init).toHaveBeenCalledOnce();
+      expect(api.downloadBudget).toHaveBeenCalledOnce();
+    });
+
+    it("reopens after the settings change", async () => {
+      const api = fakeApi();
+      let current = settings;
+      const client = makeWith(api, () => current);
+      await client.listAccounts();
+      current = { ...settings, syncId: "sync-2" };
+      await client.listAccounts();
+      expect(api.init).toHaveBeenCalledTimes(2);
+      expect(api.shutdown).toHaveBeenCalledOnce();
+    });
+
+    it("drops the session on failure", async () => {
+      const api = fakeApi();
+      const client = make(api);
+      await client.listAccounts();
+      (api.importTransactions as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("boom"),
+      );
+      await expect(
+        client.importTransactions([{ account: "a", date: "d" }]),
+      ).rejects.toThrow("boom");
+      expect(api.shutdown).toHaveBeenCalledOnce();
+      await client.listAccounts();
+      expect(api.init).toHaveBeenCalledTimes(2);
+    });
+
+    it("retries once with a fresh session when a reused one fails", async () => {
+      const api = fakeApi();
+      const client = make(api);
+      await client.listAccounts();
+      (api.getAccounts as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new Error("stale"),
+      );
+      expect(await client.listAccounts()).toEqual([
+        { id: "a1", name: "Chequing" },
+      ]);
+      expect(api.init).toHaveBeenCalledTimes(2);
+    });
+
+    it("shuts the session down after the idle timeout", async () => {
+      vi.useFakeTimers();
+      const api = fakeApi();
+      const client = makeWith(api, () => settings, {
+        idleTimeoutMs: 1000,
+        timeoutMs: 5000,
+      });
+      await client.listAccounts();
+      await vi.advanceTimersByTimeAsync(999);
+      expect(api.shutdown).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(2);
+      expect(api.shutdown).toHaveBeenCalledOnce();
+      await client.listAccounts();
+      expect(api.init).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("status cache", () => {
+    afterEach(() => vi.useRealTimers());
+
+    it("shares one check and refreshes after invalidate or expiry", async () => {
+      vi.useFakeTimers();
+      const api = fakeApi();
+      const lines: string[] = [];
+      const logger = createLogger(
+        "debug",
+        new Writable({
+          write(chunk, _enc, cb) {
+            lines.push(String(chunk));
+            cb();
+          },
+        }),
+      );
+      const checks = () =>
+        lines.filter((l) => l.includes("Actual operation started")).length;
+      const client = createActualClient({
+        getSettings: () => settings,
+        dataDir: "/tmp/actual-client-test",
+        loadApi: async () => api,
+        timeoutMs: 5000,
+        statusCacheMs: 15_000,
+        logger,
+      });
+      await client.getStatus();
+      await client.getStatus();
+      expect(checks()).toBe(1);
+      client.invalidate?.();
+      await client.getStatus();
+      expect(checks()).toBe(2);
+      await vi.advanceTimersByTimeAsync(15_001);
+      await client.getStatus();
+      expect(checks()).toBe(3);
+    });
+  });
+
+  describe("rate limiting", () => {
+    afterEach(() => vi.useRealTimers());
+
+    it("backs off without network calls, then recovers", async () => {
+      vi.useFakeTimers();
+      const api = fakeApi({
+        init: vi
+          .fn()
+          .mockRejectedValueOnce(
+            new Error("Authentication failed: too-many-requests"),
+          )
+          .mockResolvedValue(undefined),
+      });
+      const client = createActualClient({
+        getSettings: () => settings,
+        dataDir: "/tmp/actual-client-test",
+        loadApi: async () => api,
+        timeoutMs: 5000,
+        statusCacheMs: 0,
+      });
+      expect(await client.getStatus()).toEqual({
+        connected: false,
+        error: "Actual is rate-limiting logins; retrying in 60 s.",
+        retryAfterSeconds: 60,
+      });
+      await vi.advanceTimersByTimeAsync(10_000);
+      const blocked = await client.getStatus();
+      expect(blocked.retryAfterSeconds).toBe(50);
+      await expect(client.listAccounts()).rejects.toBeInstanceOf(
+        ActualRateLimitError,
+      );
+      expect(api.init).toHaveBeenCalledOnce();
+      await vi.advanceTimersByTimeAsync(50_001);
+      expect(await client.getStatus()).toEqual({ connected: true });
+      expect(api.init).toHaveBeenCalledTimes(2);
+    });
   });
 });

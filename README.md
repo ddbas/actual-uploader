@@ -42,6 +42,12 @@ header shows whether the connection works. The server uses the official
 `@actual-app/api` package, so its version should match your Actual server's
 version; a mismatch shows up as the reason next to "Not connected".
 
+Actual rate-limits logins per IP, so the server keeps its Actual session open
+and reuses it (closing it after 5 minutes idle, on failure, or when settings
+change) and caches the status for 15 seconds. If Actual answers
+`too-many-requests`, the server stops contacting it for 60 seconds and the
+header shows "Actual is rate-limiting logins; retrying in N s."
+
 The Actual connection can also be preconfigured with environment variables:
 `ACTUAL_SERVER_URL`, `ACTUAL_SERVER_PASSWORD`, `ACTUAL_SYNC_ID` and (optional)
 `ACTUAL_ENCRYPTION_PASSWORD`. Empty values count as unset. Each provided value

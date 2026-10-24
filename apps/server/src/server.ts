@@ -156,7 +156,7 @@ export function createServer(
       actualClient
         .listAccounts()
         .then((accounts) => sendJson(res, 200, accounts))
-        .catch((error) => sendJson(res, 502, { error: errorMessage(error) }));
+        .catch((error) => sendJson(res, 502, errorBody(error)));
       return;
     }
 
@@ -165,10 +165,7 @@ export function createServer(
         .getStatus()
         .then((status) => sendJson(res, 200, status))
         .catch((error) =>
-          sendJson(res, 200, {
-            connected: false,
-            error: errorMessage(error),
-          }),
+          sendJson(res, 200, { connected: false, ...errorBody(error) }),
         );
       return;
     }
@@ -179,9 +176,9 @@ export function createServer(
     }
 
     if (url.pathname === "/api/settings/actual") {
-      handleActualSettings(req, res, actualSettings, log).catch(
-        internalError("settings"),
-      );
+      handleActualSettings(req, res, actualSettings, log, () =>
+        actualClient.invalidate?.(),
+      ).catch(internalError("settings"));
       return;
     }
 
@@ -329,6 +326,7 @@ async function handleActualSettings(
   res: import("node:http").ServerResponse,
   store: ActualSettingsStore,
   log: Logger,
+  onSaved: () => void,
 ): Promise<void> {
   if (req.method === "GET") {
     sendJson(res, 200, store.get());
@@ -348,6 +346,7 @@ async function handleActualSettings(
       sendJson(res, 400, { errors });
       return;
     }
+    onSaved();
     sendJson(res, 200, store.get());
     return;
   }
@@ -356,6 +355,18 @@ async function handleActualSettings(
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
+}
+
+/** `{ error }` plus `retryAfterSeconds` when Actual is rate-limiting. */
+function errorBody(error: unknown): {
+  error: string;
+  retryAfterSeconds?: number;
+} {
+  const retryAfterSeconds = (error as { retryAfterSeconds?: unknown })
+    ?.retryAfterSeconds;
+  return typeof retryAfterSeconds === "number"
+    ? { error: errorMessage(error), retryAfterSeconds }
+    : { error: errorMessage(error) };
 }
 
 async function handleImport(
@@ -403,6 +414,6 @@ async function handleImport(
       await client.importTransactions(txs as ImportTransaction[]),
     );
   } catch (error) {
-    sendJson(res, 502, { error: errorMessage(error) });
+    sendJson(res, 502, errorBody(error));
   }
 }

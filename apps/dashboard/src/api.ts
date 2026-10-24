@@ -147,6 +147,8 @@ export async function saveActualSettings(
 export interface ActualStatus {
   connected: boolean;
   error?: string;
+  /** Seconds to wait before re-checking, when Actual is rate-limiting. */
+  retryAfterSeconds?: number;
 }
 
 export async function fetchActualStatus(): Promise<ActualStatus> {
