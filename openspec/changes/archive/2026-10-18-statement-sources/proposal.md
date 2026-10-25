@@ -8,7 +8,7 @@ tool must let users teach it how to read each kind of statement.
 ## What Changes
 
 - Add an "Sources" tab to the dashboard where users create, view, and delete
-  "sources" (e.g. "Desjardins checking & savings CSV").
+  "sources" (e.g. "Checking & savings CSV").
 - Add a guided wizard modelled on Actual Budget's CSV importer: the user uploads
   an example CSV; the wizard auto-detects the delimiter, header, columns, date
   format and decimal separator; and the user adjusts a field-to-column mapping

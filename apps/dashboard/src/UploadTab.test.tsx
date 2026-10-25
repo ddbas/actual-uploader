@@ -36,7 +36,7 @@ beforeEach(() => {
         );
       }
       return new Response(
-        JSON.stringify([{ id: "s1", name: "Desjardins", format: "csv" }]),
+        JSON.stringify([{ id: "s1", name: "Example", format: "csv" }]),
       );
     }),
   );

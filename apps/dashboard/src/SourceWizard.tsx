@@ -59,7 +59,7 @@ export function SourceWizard({ onSave, onCancel }: SourceWizardProps) {
           type="text"
           className="input w-full max-w-sm"
           value={name}
-          placeholder="e.g. Desjardins checking & savings"
+          placeholder="e.g. Checking & savings"
           onChange={(e) => setName(e.target.value)}
         />
       </label>

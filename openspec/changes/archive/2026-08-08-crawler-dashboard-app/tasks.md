@@ -32,8 +32,7 @@
 - [x] 3.1 Add Playwright (latest) as a dependency of the crawler implementations
   package.
 - [x] 3.2 Implement the `mock` crawler: launch Playwright, navigate to
-  `https://accweb.mouv.desjardins.com/identifiantunique/securite-garantie/authentification/auth/manuel`,
-  wait 5 seconds, close the browser.
+  `https://example.com/login`, wait 5 seconds, close the browser.
 - [x] 3.3 After closing Playwright, yield a small set of hard-coded
   `Transaction` objects from the mock crawler's `run()` generator.
 - [x] 3.4 Write Vitest tests for the mock crawler with Playwright's

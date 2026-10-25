@@ -8,7 +8,7 @@ import { createServer } from "./server.js";
 import { SourceStore } from "./sourceStore.js";
 
 const valid = {
-  name: "Desjardins",
+  name: "Example",
   format: "csv",
   delimiter: ",",
   hasHeader: true,

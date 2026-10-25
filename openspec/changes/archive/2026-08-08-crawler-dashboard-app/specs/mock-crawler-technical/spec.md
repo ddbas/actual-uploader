@@ -5,7 +5,7 @@
 The `mock` crawler SHALL be implemented as a conformant implementation of the
 common `Crawler` interface (see `crawler-interface-technical`), serving as the
 project's reference implementation for future crawlers. Its `name` field SHALL
-be set to "Desjardins (Mock)".
+be set to "Mock".
 
 #### Scenario: Mock crawler conforms to the Crawler interface
 
@@ -16,18 +16,16 @@ be set to "Desjardins (Mock)".
 ### Requirement: Mock Crawler Uses Playwright for Browser Automation
 
 The mock crawler's `run` method SHALL use Playwright to launch a Chromium
-browser instance, navigate it to
-`https://accweb.mouv.desjardins.com/identifiantunique/securite-garantie/authentification/auth/manuel`,
-wait 5 seconds, and then close the Playwright browser instance, without
-attempting to authenticate.
+browser instance, navigate it to `https://example.com/login`, wait 5 seconds,
+and then close the Playwright browser instance, without attempting to
+authenticate.
 
 #### Scenario: Mock crawler opens the target page via Playwright
 
 - **WHEN** the mock crawler's `run` method is invoked
 - **THEN** a Playwright Chromium browser instance is launched, a page is
-  navigated to the Desjardins authentication URL, the crawler waits 5 seconds,
-  and the Playwright browser instance is closed before the run yields any
-  transactions
+  navigated to the example login URL, the crawler waits 5 seconds, and the
+  Playwright browser instance is closed before the run yields any transactions
 
 ### Requirement: Mock Crawler Yields Hard-Coded Transaction Objects
 
