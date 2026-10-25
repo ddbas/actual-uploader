@@ -1,12 +1,20 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.7/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.3/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
     "useIgnoreFile": true
   },
   "files": {
-    "ignoreUnknown": false
+    "ignoreUnknown": false,
+    "includes": [
+      "**",
+      "!.agents",
+      "!.pi",
+      "!.opencode",
+      "!.codegraph",
+      "!.mise"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -15,7 +23,10 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "suspicious": {
+        "noExplicitAny": "error"
+      }
     }
   },
   "javascript": {
@@ -34,6 +45,12 @@
       "source": {
         "organizeImports": "on"
       }
+    }
+  },
+  "markdown": {
+    "formatter": {
+      "enabled": true,
+      "proseWrap": "always"
     }
   }
 }

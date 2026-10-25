@@ -16,8 +16,7 @@
     }
   },
   "scripts": {
-    "build": "tsup && tsc -p tsconfig.build.json --outDir dist",
-    "check-types": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc --noEmit -p tsconfig.json && tsup && tsc -p tsconfig.build.json --outDir dist",
     "test": "vitest run",
     "dev": "tsup --watch"
   },

@@ -5,21 +5,15 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
-    "check-types": {
-      "dependsOn": ["^check-types"]
-    },
     "test": {
       "outputs": ["coverage/**"],
       "dependsOn": ["^build"]
     },
     "//#format:biome": {
       "inputs": [
-        "**/*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc,css}",
+        "**/*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc,css,md}",
         "biome.json"
       ]
-    },
-    "//#format:prettier": {
-      "inputs": ["**/*.md", ".prettierrc.json", ".prettierignore"]
     },
     "dev": {
       "passThroughEnv": [

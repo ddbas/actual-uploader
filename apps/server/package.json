@@ -8,8 +8,7 @@
     "account-crawler": "./dist/bin.js"
   },
   "scripts": {
-    "build": "tsup",
-    "check-types": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc --noEmit -p tsconfig.json && tsup",
     "test": "vitest run",
     "dev": "tsx watch src/bin.ts",
     "start": "node dist/bin.js"
