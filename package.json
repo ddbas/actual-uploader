@@ -8,8 +8,7 @@
     "format:biome": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true .",
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "test": "turbo run test",
-    "check-types": "turbo run check-types"
+    "test": "turbo run test"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",

@@ -104,8 +104,8 @@ export interface ActualSettingsView {
 }
 
 export interface ActualSettingsUpdate {
-  serverUrl: string;
-  syncId: string;
+  serverUrl?: string;
+  syncId?: string;
   serverPassword?: string;
   encryptionPassword?: string;
 }
