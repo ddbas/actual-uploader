@@ -44,7 +44,7 @@ async function main() {
     throw error;
   }
   logger = createLogger(logLevel);
-  logger.info({ level: logger.level, dataDir }, "Starting Account Crawler");
+  logger.info({ level: logger.level, dataDir }, "Starting Actual Uploader");
   logger.warn("TLS certificate verification is disabled (temporary)");
   const staticDir = join(__dirname, "..", "..", "dashboard", "dist");
   const { server } = createServer({
@@ -74,7 +74,7 @@ async function main() {
     typeof address === "object" && address ? address.port : port;
   const url = `http://${host}:${resolvedPort}`;
 
-  logger.info({ url }, "Account Crawler dashboard running");
+  logger.info({ url }, "Actual Uploader dashboard running");
 
   if (!process.env.ACCOUNT_CRAWLER_NO_OPEN) {
     logger.debug("Opening dashboard in browser");
@@ -84,10 +84,10 @@ async function main() {
 
 main().catch((error) => {
   if (logger) {
-    logger.error({ err: error }, "Failed to start Account Crawler");
+    logger.error({ err: error }, "Failed to start Actual Uploader");
   } else {
     // Config failed before the logger existed.
-    console.error("Failed to start Account Crawler:", error);
+    console.error("Failed to start Actual Uploader:", error);
   }
   process.exitCode = 1;
 });
