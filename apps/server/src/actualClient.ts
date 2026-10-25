@@ -444,6 +444,16 @@ export function createActualClient(options: ActualClientOptions): ActualClient {
       return withActual(
         "accounts",
         async (api) => {
+          try {
+            await api.sync();
+          } catch (error) {
+            if (isRateLimit(error)) throw error;
+            const settings = options.getSettings();
+            log.warn(
+              { error: describeError(error, settings) },
+              `Actual sync before listing accounts failed: ${sanitizeError(error, settings)}`,
+            );
+          }
           const accounts = (await api.getAccounts()).map(({ id, name }) => ({
             id,
             name,

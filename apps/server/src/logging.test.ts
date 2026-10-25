@@ -105,7 +105,10 @@ describe("actual connection diagnostics", () => {
       logger,
     });
     await client.getStatus();
-    const warn = entries.find((e) => e.level === 40) as Record<string, any>;
+    const warn = entries.find((e) => e.level === 40) as Record<
+      string,
+      unknown
+    > & { error: { cause: unknown } };
     expect(warn.phase).toBe("init");
     expect(warn.serverUrl).toBe(settings.serverUrl);
     expect(warn.error.cause).toMatchObject({
@@ -130,7 +133,7 @@ describe("actual connection diagnostics", () => {
       logger,
     });
     await client.getStatus();
-    const warn = entries.find((e) => e.level === 40) as Record<string, any>;
+    const warn = entries.find((e) => e.level === 40) as Record<string, unknown>;
     expect(warn.phase).toBe("download-budget");
     expect(warn.msg).toContain("Timed out");
   });

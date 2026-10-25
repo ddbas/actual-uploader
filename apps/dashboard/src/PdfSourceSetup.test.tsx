@@ -119,6 +119,7 @@ describe("PdfSourceSetup: approaches", () => {
       validateConfig: () => [],
       run: () => ({ transactions: [], errors: [], warnings: [] }),
     };
+    // biome-ignore lint/correctness/noComponentHookFactories: stable per test; defined inline to keep the fixture local
     const OtherEditor: ComponentType<EditorProps> = ({ config, onChange }) => {
       const n = (config as { n: number }).n;
       return (

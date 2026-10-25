@@ -9,23 +9,31 @@ enter = "mise exec -- lefthook install"
 
 [tasks.build]
 description = "Build the project"
-run = "pnpm build"
+run = "mise exec -- pnpm build"
 
 [tasks.dev]
 description = "Run dev processes in parallel"
-run = "pnpm dev"
+run = "mise exec -- pnpm dev"
 
 [tasks."docker:build"]
 description = "Build the server Docker image"
 run = "docker build -f apps/server/Dockerfile -t account-crawler-server ."
 
+[tasks.format]
+description = "Format and lint with Biome (applies fixes)"
+run = "pnpm format"
+
 [tasks.install]
 description = "Install dependencies"
-run = "pnpm install"
+run = "mise exec -- pnpm install"
+
+[tasks."openspec:list"]
+description = "List OpenSpec proposals"
+run = "mise exec -- openspec list"
 
 [tasks.test]
 description = "Run tests"
-run = "pnpm test"
+run = "mise exec -- pnpm test"
 
 [tools]
 lefthook = "latest"

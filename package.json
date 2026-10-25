@@ -4,17 +4,14 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "format": "turbo run //#format:biome //#format:prettier",
+    "format": "turbo run //#format:biome",
     "format:biome": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true .",
-    "format:prettier": "prettier --write \"**/*.md\"",
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "test": "turbo run test",
-    "check-types": "turbo run check-types"
+    "test": "turbo run test"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.7",
-    "prettier": "3.9.6",
+    "@biomejs/biome": "2.6.3",
     "turbo": "^2.11.9",
     "typescript": "^7.0.2"
   },

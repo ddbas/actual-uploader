@@ -116,6 +116,49 @@ describe("actual client", () => {
     ]);
   });
 
+  it("syncs before listing accounts, without extra logins", async () => {
+    const events: string[] = [];
+    const api = fakeApi({
+      sync: vi.fn(async () => {
+        events.push("sync");
+      }),
+      getAccounts: vi.fn(async () => {
+        events.push("get");
+        return [{ id: "a1", name: "Chequing" }];
+      }),
+    });
+    const client = make(api);
+    await client.listAccounts();
+    await client.listAccounts();
+    expect(events).toEqual(["sync", "get", "sync", "get"]);
+    expect(api.init).toHaveBeenCalledOnce();
+    expect(api.downloadBudget).toHaveBeenCalledOnce();
+  });
+
+  it("returns local accounts when the pre-listing sync fails", async () => {
+    const api = fakeApi({
+      sync: vi.fn(async () => {
+        throw new Error("boom");
+      }),
+    });
+    const client = make(api);
+    expect(await client.listAccounts()).toEqual([
+      { id: "a1", name: "Chequing" },
+    ]);
+    await client.listAccounts();
+    expect(api.init).toHaveBeenCalledOnce();
+    expect(api.shutdown).not.toHaveBeenCalled();
+  });
+
+  it("rethrows rate-limit errors from the pre-listing sync", async () => {
+    const api = fakeApi({
+      sync: vi.fn(async () => {
+        throw new Error("too-many-requests");
+      }),
+    });
+    await expect(make(api).listAccounts()).rejects.toThrow(/rate-limiting/);
+  });
+
   it("imports grouped by account and syncs", async () => {
     const api = fakeApi();
     const result = await make(api).importTransactions([
