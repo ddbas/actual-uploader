@@ -19,6 +19,10 @@ run = "pnpm dev"
 description = "Build the server Docker image"
 run = "docker build -f apps/server/Dockerfile -t account-crawler-server ."
 
+[tasks.format]
+description = "Format and lint with Biome (applies fixes)"
+run = "pnpm format"
+
 [tasks.install]
 description = "Install dependencies"
 run = "pnpm install"

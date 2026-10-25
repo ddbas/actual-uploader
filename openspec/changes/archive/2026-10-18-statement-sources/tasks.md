@@ -5,7 +5,7 @@
 - [x] 1.3 Flexible date parsing and multi-row date format detection
 - [x] 1.4 Amount layouts (single, split, in/out), flip, skipped lines
 - [x] 1.5 Mapping guess (including value-based payee and amount detection) and
-      column analysis
+  column analysis
 - [x] 1.6 Unit tests
 
 ## 2. Server
@@ -20,7 +20,7 @@
 - [x] 3.3 Auto-mapping, column filtering, option naming, date format hints
 - [x] 3.4 Confirmation prompt before deleting a source
 - [x] 3.5 Allow selecting any column in every select; block saving when a column
-      is assigned to more than one field (shared validation)
+  is assigned to more than one field (shared validation)
 - [x] 3.6 Tests
 
 ## Deferred (separate proposals)
