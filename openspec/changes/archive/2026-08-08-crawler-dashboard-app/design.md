@@ -30,7 +30,7 @@ Constraints from the proposal:
 - Wire a local server that runs crawlers and streams progress/results to the
   browser over a persistent connection (SSE), and a binary entry point that
   starts the server and opens the browser.
-- Implement the `mock` crawler per the spec (Playwright to the Desjardins auth
+- Implement the `mock` crawler per the spec (Playwright to the example login
   URL, 5s wait, close, yield hard-coded transactions).
 
 **Non-Goals:**
@@ -152,9 +152,7 @@ async function* run() {
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage();
-    await page.goto(
-      "https://accweb.mouv.desjardins.com/identifiantunique/securite-garantie/authentification/auth/manuel",
-    );
+    await page.goto("https://example.com/login");
     await page.waitForTimeout(5000);
   } finally {
     await browser.close();

@@ -42,17 +42,17 @@ describe("SourcesTab", () => {
     render(<SourcesTab />);
     expect(await screen.findByText(/No sources yet/)).toBeTruthy();
     cleanup();
-    existing = [{ id: "1", name: "Desjardins", format: "csv" }];
+    existing = [{ id: "1", name: "Example", format: "csv" }];
     render(<SourcesTab />);
-    expect(await screen.findByText("Desjardins")).toBeTruthy();
+    expect(await screen.findByText("Example")).toBeTruthy();
     expect(screen.getByText("CSV")).toBeTruthy();
   });
 
   it("asks for confirmation before deleting a source", async () => {
-    existing = [{ id: "1", name: "Desjardins", format: "csv" }];
+    existing = [{ id: "1", name: "Example", format: "csv" }];
     const user = userEvent.setup();
     render(<SourcesTab />);
-    await user.click(await screen.findByLabelText("Delete Desjardins"));
+    await user.click(await screen.findByLabelText("Delete Example"));
     const calls = () =>
       (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.filter(
         (c) => c[1]?.method === "DELETE",
@@ -63,7 +63,7 @@ describe("SourcesTab", () => {
     expect(screen.queryByRole("alertdialog")).toBeNull();
     expect(calls()).toHaveLength(0);
 
-    await user.click(screen.getByLabelText("Delete Desjardins"));
+    await user.click(screen.getByLabelText("Delete Example"));
     await user.click(screen.getByRole("button", { name: "Confirm delete" }));
     await waitFor(() => expect(calls()).toHaveLength(1));
   });
@@ -72,7 +72,7 @@ describe("SourcesTab", () => {
     const user = userEvent.setup();
     render(<SourcesTab />);
     await user.click(await screen.findByText("New source"));
-    await user.type(screen.getByLabelText("Name"), "Desjardins");
+    await user.type(screen.getByLabelText("Name"), "Example");
     await user.upload(
       screen.getByLabelText("Example CSV file"),
       new File([csv], "ex.csv", { type: "text/csv" }),
@@ -139,7 +139,7 @@ describe("SourcesTab", () => {
     await user.click(save);
     await waitFor(() => expect(saved).toHaveLength(1));
     expect(saved[0]).toMatchObject({
-      name: "Desjardins",
+      name: "Example",
       format: "csv",
       hasHeader: true,
       dateColumn: 0,

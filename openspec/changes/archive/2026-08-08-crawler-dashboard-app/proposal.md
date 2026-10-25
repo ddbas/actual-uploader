@@ -28,9 +28,8 @@ crawlers can be added consistently.
   reference (https://actualbudget.org/docs/api/reference) so crawler output is
   directly compatible with Actual Budget import.
 - Implement a `mock` crawler: launches Playwright, navigates to
-  `https://accweb.mouv.desjardins.com/identifiantunique/securite-garantie/authentification/auth/manuel`,
-  waits 5 seconds, closes Playwright, then yields a small set of hard-coded mock
-  `Transaction` records.
+  `https://example.com/login`, waits 5 seconds, closes Playwright, then yields a
+  small set of hard-coded mock `Transaction` records.
 - Add server-side endpoints/streaming mechanism (e.g. Server-Sent Events or
   WebSocket) so the dashboard can display live per-crawler progress and stream
   transactions to the Results tab as they arrive.
