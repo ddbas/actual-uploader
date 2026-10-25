@@ -7,7 +7,14 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!.agents", "!.pi", "!.opencode", "!.codegraph"]
+    "includes": [
+      "**",
+      "!.agents",
+      "!.pi",
+      "!.opencode",
+      "!.codegraph",
+      "!.mise"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -16,7 +23,10 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "suspicious": {
+        "noExplicitAny": "error"
+      }
     }
   },
   "javascript": {
